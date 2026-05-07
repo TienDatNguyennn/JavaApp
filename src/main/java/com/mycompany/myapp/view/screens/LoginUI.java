@@ -8,7 +8,6 @@ package com.mycompany.myapp.view.screens;
  *
  * @author Tien Dat
  */
-import com.mycompany.myapp.view.screens.MainFrame;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
@@ -16,17 +15,15 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Path2D;
 import java.awt.geom.RoundRectangle2D;
-import java.util.regex.Pattern;
 import com.mycompany.myapp.controller.LoginController;
+
 public class LoginUI extends JFrame {
     private LoginController controller;
 
     public LoginUI() {
-        // Thêm dòng này: Khởi tạo Controller
         controller = new LoginController();
         initUI();
     }
-
 
     private void initUI() {
         setTitle("Giao diện Đăng Nhập - Chuẩn UI");
@@ -186,10 +183,10 @@ public class LoginUI extends JFrame {
         socialRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         RoundedButton btnGoogle = new RoundedButton("", Color.WHITE, Color.BLACK);
-        styleGoogleButton(btnGoogle); // Áp dụng method style riêng
+        styleGoogleButton(btnGoogle); 
 
         RoundedButton btnFacebook = new RoundedButton("", Color.WHITE, Color.BLACK);
-        styleFacebookButton(btnFacebook); // Áp dụng method style riêng
+        styleFacebookButton(btnFacebook); 
 
         socialRow.add(btnGoogle);
         socialRow.add(btnFacebook);
@@ -200,7 +197,7 @@ public class LoginUI extends JFrame {
         form.add(createDivider("- HOẶC -"));
         form.add(Box.createRigidArea(new Dimension(0, 15)));
 
-        // --- 5. Input: Email ---
+        // --- 5. Input: Email/Username ---
         form.add(createInputLabel("User Name"));
         PlaceholderTextField txtEmail = new PlaceholderTextField("");
         form.add(txtEmail);
@@ -232,7 +229,7 @@ public class LoginUI extends JFrame {
         form.add(passWrapper);
         form.add(Box.createRigidArea(new Dimension(0, 40)));
 
-        // --- 7. Login Button (Áp dụng style động) ---
+        // --- 7. Login Button ---
         RoundedButton btnLogin = new RoundedButton("Đăng nhập", Color.decode("#8B5CF6"), Color.WHITE);
         btnLogin.setColors(Color.decode("#8B5CF6"), Color.decode("#7C3AED"), Color.decode("#6D28D9"));
         btnLogin.setBorderColors(Color.decode("#8B5CF6"), Color.decode("#7C3AED"));
@@ -276,18 +273,18 @@ public class LoginUI extends JFrame {
         });
 
         btnLogin.addActionListener(e -> {
-            // 1. Lấy dữ liệu từ UI
+            // Lấy dữ liệu từ UI
             String username = txtEmail.getText().trim();
             String pass = new String(txtPass.getPassword());
 
-            // 2. Chuyển giao toàn bộ trách nhiệm xử lý logic, check DB, tạo JWT cho Controller
+            // Chuyển giao trách nhiệm cho Controller
             controller.handleLogin(username, pass, this);
         });
 
         lblRegister.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                JOptionPane.showMessageDialog(LoginUI.this, "Chuyển hướng sang giao diện Đăng Ký...");
+                JOptionPane.showMessageDialog(LoginUI.this, "Vui lòng liên hệ Quản trị viên để được cấp phát tài khoản!");
             }
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -310,9 +307,7 @@ public class LoginUI extends JFrame {
         btn.setText("<html><b style='color:#DB4437'>G</b> Đăng nhập Google</html>");
         btn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         btn.setForeground(Color.decode("#374151"));
-        // Tham số: bg, hover, pressed
         btn.setColors(Color.decode("#FFFFFF"), Color.decode("#F9FAFB"), Color.decode("#F3F4F6"));
-        // Tham số: borderColor, hoverBorderColor
         btn.setBorderColors(Color.decode("#E5E7EB"), Color.decode("#D1D5DB"));
         btn.setRadius(35);
     }
@@ -321,9 +316,7 @@ public class LoginUI extends JFrame {
         btn.setText("<html><b>f</b> Đăng nhập Facebook</html>");
         btn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         btn.setForeground(Color.WHITE);
-        // Tham số: bg, hover, pressed
         btn.setColors(Color.decode("#1877F2"), Color.decode("#166FE5"), Color.decode("#145DD1"));
-        // Tham số: borderColor, hoverBorderColor
         btn.setBorderColors(Color.decode("#1877F2"), Color.decode("#166FE5"));
         btn.setRadius(35);
     }
@@ -351,7 +344,6 @@ public class LoginUI extends JFrame {
         return p;
     }
 
-    // Class RoundedButton đã được nâng cấp để hỗ trợ State Color (Hover/Pressed)
     class RoundedButton extends JButton {
         private Color bg, hoverBg, pressedBg;
         private Color borderColor, hoverBorderColor;
@@ -373,7 +365,7 @@ public class LoginUI extends JFrame {
             setContentAreaFilled(false); 
             setBorderPainted(false);
             setCursor(new Cursor(Cursor.HAND_CURSOR));
-            setBorder(new EmptyBorder(5, 15, 5, 15)); // Padding chuẩn thay vì dùng Border object
+            setBorder(new EmptyBorder(5, 15, 5, 15)); 
 
             addMouseListener(new MouseAdapter() {
                 @Override
@@ -425,13 +417,11 @@ public class LoginUI extends JFrame {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             
-            // Vẽ Background theo State
             if (isPressed) g2.setColor(pressedBg);
             else if (isHovered) g2.setColor(hoverBg);
             else g2.setColor(bg);
             g2.fill(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, radius, radius));
             
-            // Vẽ Border theo State
             if (borderColor != null) {
                 if (isHovered && !isPressed && hoverBorderColor != null) {
                     g2.setColor(hoverBorderColor);
@@ -470,25 +460,50 @@ public class LoginUI extends JFrame {
             setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY));
         }
     }
+    
     public void showError(String message) {
         JOptionPane.showMessageDialog(this, message, "Lỗi Đăng Nhập", JOptionPane.ERROR_MESSAGE);
     }
 
-    // Trong file LoginUI.java
-public void onLoginSuccess() {
-    // 1. Lấy token đã lưu trong SessionStore
+    // ==========================================
+    // HÀM XỬ LÝ KHI ĐĂNG NHẬP THÀNH CÔNG (ĐÃ HOÀN THIỆN)
+    // ==========================================
+    public void onLoginSuccess() {
+    // 1. Lấy thông tin từ SessionStore
+    String fullName = com.mycompany.myapp.utils.SessionStore.getFullName();
     String token = com.mycompany.myapp.utils.SessionStore.getCurrentToken();
     
-    // 2. Lấy tên người dùng từ token thông qua TokenService
-    com.mycompany.myapp.utils.TokenService tokenService = new com.mycompany.myapp.utils.TokenService();
-    String name = tokenService.getFullNameFromToken(token);
-    
-    // 3. Hiển thị thông báo và chuyển trang
-    JOptionPane.showMessageDialog(this, "Đăng nhập thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+    // 2. Lấy danh sách quyền của người dùng hiện tại
+    // Giả sử SessionStore đã lưu List<String> roles từ lúc đăng nhập
+    java.util.List<String> roles = com.mycompany.myapp.utils.SessionStore.getUserRoles(); 
+
+    JOptionPane.showMessageDialog(this, "Đăng nhập thành công!\nXin chào, " + fullName, "Thông báo", JOptionPane.INFORMATION_MESSAGE);
     this.dispose(); 
-    
-    // 4. Mở màn hình chính và truyền tên vào
-    new MainFrame().setVisible(true); 
+
+    SwingUtilities.invokeLater(() -> {
+        JFrame mainFrame = new JFrame("Hệ Thống Quản Lý Đào Tạo");
+        mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        mainFrame.setSize(1200, 750);
+        mainFrame.setLocationRelativeTo(null);
+
+        // 3. PHÂN LUỒNG GIAO DIỆN THEO ROLE
+        if (roles.contains("Giao_Vien_Nhom_Truong")) {
+            // Nếu là Quản trị viên/Trưởng nhóm: Hiển thị Admin Portal (Full quyền)
+            mainFrame.setTitle("Admin Portal - Quản Trị Hệ Thống");
+            mainFrame.add(new com.mycompany.myapp.view.screens.AccountManagerUI());
+        } 
+        else if (roles.contains("Nhan_Vien_Tu_Van")) {
+            // Nếu là Giáo viên/Tư vấn: Hiển thị giao diện Dashboard công việc riêng
+            mainFrame.setTitle("Teacher Dashboard - Quản Lý Lớp Học");
+            mainFrame.add(new com.mycompany.myapp.view.screens.TeacherDashboardUI()); 
+        } 
+        else {
+            // Giao diện mặc định cho các quyền thấp hơn
+            mainFrame.add(new JLabel("Chào mừng bạn đến với hệ thống!", SwingConstants.CENTER));
+        }
+
+        mainFrame.setVisible(true);
+    });
 }
     
     public static void main(String[] args) {
