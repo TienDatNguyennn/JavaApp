@@ -20,4 +20,5 @@ public class Main {
         System.out.println("Dòng Hash mới tạo: " + hash);
         System.out.println("Kết quả tự đối chiếu: " + match);
     }
+    
 }
