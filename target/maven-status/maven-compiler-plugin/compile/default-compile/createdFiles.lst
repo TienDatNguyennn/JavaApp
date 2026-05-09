@@ -25,6 +25,7 @@ com\mycompany\myapp\view\screens\finance\ManageInvoicePanel$1.class
 com\mycompany\myapp\view\screens\finance\PaymentPanel$3.class
 com\mycompany\myapp\view\screens\LoginUI$2.class
 com\mycompany\myapp\model\FunctionPermission.class
+com\mycompany\myapp\view\screens\finance\PayrollPanel$2.class
 com\mycompany\myapp\model\Invoice.class
 com\mycompany\myapp\view\components\CustomButton$1.class
 com\mycompany\myapp\model\Account.class

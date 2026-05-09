@@ -40,6 +40,7 @@ public class PayrollPanel extends JPanel {
     // Add payroll form
     private JTextField txtUserId, txtAddPeriod, txtBasic, txtTeaching, txtBonus;
     private JComboBox<String> cmbAddType;
+    private JLabel lblTotalValue; // Nhãn hiển thị tổng tiền tự động
 
     public PayrollPanel() {
         setLayout(new BorderLayout(0, 0));
@@ -127,14 +128,10 @@ public class PayrollPanel extends JPanel {
     private JPanel buildTableToolbar() {
         JPanel bar = new JPanel(new BorderLayout());
         bar.setOpaque(false);
-
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         right.setOpaque(false);
 
-        // Ô nhập kỳ lương để lọc
         txtFilterPeriod = new JTextField("05/2026", 7);
-        txtFilterPeriod.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        
         cmbStaffType = new JComboBox<>(new String[]{"Tất cả","TEACHER","OFFICE"});
         txtSearchName = new JTextField(10);
 
@@ -156,11 +153,10 @@ public class PayrollPanel extends JPanel {
 
     private JScrollPane buildTable() {
         tableModel = new DefaultTableModel(new String[]{"Nhân viên", "Loại", "Lương cơ bản", "Phí giảng dạy", "Thưởng", "Tổng thực lĩnh"}, 0) {
-            public boolean isCellEditable(int r, int c) { return false; }
+            @Override public boolean isCellEditable(int r, int c) { return false; }
         };
         tblPayroll = new JTable(tableModel);
         tblPayroll.setRowHeight(35);
-        // ... (Các phần cấu hình renderer giữ nguyên như cũ để đảm bảo giao diện đẹp) ...
         return new JScrollPane(tblPayroll);
     }
 
@@ -192,7 +188,27 @@ public class PayrollPanel extends JPanel {
         txtTeaching = styledField("0"); card.add(txtTeaching); addGap(card, 10);
 
         addFormLabel(card, "Thưởng");
-        txtBonus = styledField("0"); card.add(txtBonus); addGap(card, 15);
+        txtBonus = styledField("0"); card.add(txtBonus); addGap(card, 10);
+
+        // Hiển thị tổng thực lĩnh tự động
+        lblTotalValue = new JLabel("0đ");
+        lblTotalValue.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        lblTotalValue.setForeground(PRIMARY);
+        JPanel pTotal = new JPanel(new BorderLayout());
+        pTotal.setOpaque(false);
+        pTotal.add(new JLabel("Tổng thực lĩnh: "), BorderLayout.WEST);
+        pTotal.add(lblTotalValue, BorderLayout.EAST);
+        card.add(pTotal); addGap(card, 15);
+
+        // Lắng nghe sự kiện để tự động tính tổng (Recalc)
+        javax.swing.event.DocumentListener dl = new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { recalc(lblTotalValue); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { recalc(lblTotalValue); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e){ recalc(lblTotalValue); }
+        };
+        txtBasic.getDocument().addDocumentListener(dl);
+        txtTeaching.getDocument().addDocumentListener(dl);
+        txtBonus.getDocument().addDocumentListener(dl);
 
         CustomButton btnSave = new CustomButton("💾 Lưu bảng lương");
         btnSave.setColors(SUCCESS, SUCCESS.darker());
@@ -233,6 +249,12 @@ public class PayrollPanel extends JPanel {
 
     private void savePayroll() {
         try {
+            String userIdStr = txtUserId.getText().trim();
+            if (userIdStr.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập Mã nhân viên!");
+                return;
+            }
+
             String period = txtAddPeriod.getText().trim();
             if (!period.matches("\\d{2}/\\d{4}")) {
                 JOptionPane.showMessageDialog(this, "Định dạng kỳ lương phải là MM/yyyy (VD: 05/2026)");
@@ -240,22 +262,43 @@ public class PayrollPanel extends JPanel {
             }
 
             Payroll p = new Payroll();
-            p.setUserId(Integer.parseInt(txtUserId.getText().trim()));
+            p.setUserId(Integer.parseInt(userIdStr));
             p.setPayPeriod(period);
             p.setStaffType(cmbAddType.getSelectedItem().toString());
-            p.setBasicSalary(Double.parseDouble(txtBasic.getText().trim()));
-            p.setTotalTeachingFee(Double.parseDouble(txtTeaching.getText().trim()));
-            p.setBonusAmount(Double.parseDouble(txtBonus.getText().trim()));
+            p.setBasicSalary(parseMoney(txtBasic.getText()));
+            p.setTotalTeachingFee(parseMoney(txtTeaching.getText()));
+            p.setBonusAmount(parseMoney(txtBonus.getText()));
 
             String res = ctrl.savePayroll(p);
             if ("SUCCESS".equals(res)) {
-                JOptionPane.showMessageDialog(this, "Đã lưu thành công!");
+                JOptionPane.showMessageDialog(this, "✔ Đã lưu thành công!");
                 loadData();
             } else {
-                JOptionPane.showMessageDialog(this, res, "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Lỗi: " + res, "Lỗi Database", JOptionPane.ERROR_MESSAGE);
             }
-        } catch (Exception ex) {
+        } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "Vui lòng nhập số hợp lệ!");
+        }
+    }
+
+    private void recalc(JLabel lblTotal) {
+        try {
+            double b = parseMoney(txtBasic.getText());
+            double t = parseMoney(txtTeaching.getText());
+            double bn = parseMoney(txtBonus.getText());
+            lblTotal.setText(nf.format(b + t + bn) + "đ");
+        } catch (Exception ignored) {
+            lblTotal.setText("0đ");
+        }
+    }
+
+    private double parseMoney(String input) {
+        if (input == null || input.trim().isEmpty()) return 0;
+        String clean = input.trim().replace(",", "").replace(".", "").replace("đ", "");
+        try {
+            return Double.parseDouble(clean);
+        } catch (NumberFormatException e) {
+            return 0;
         }
     }
 
