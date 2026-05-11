@@ -15,8 +15,7 @@ public class DBConnection {
     // NẾU DÙNG ORACLE 19c/21c: "jdbc:oracle:thin:@localhost:1521/XEPDB1" hoặc "ORCLPDB1"
     private static final String URL = "jdbc:oracle:thin:@localhost:1521:orcl";
     //private static final String URL = "jdbc:oracle:thin:@localhost:1521/ORCLPDB";
-    //private static final String USERNAME = "DataSystem"; // ĐỔI LẠI TÊN USER CỦA CẬU
-    private static final String USERNAME = "system"; // ĐỔI LẠI TÊN USER CỦA CẬU
+    private static final String USERNAME = "quanlytrungtam"; // ĐỔI LẠI TÊN USER CỦA CẬU
     private static final String PASSWORD = "Admin123"; // ĐỔI LẠI MẬT KHẨU CỦA CẬU
 
     // 2. Private constructor: Ngăn không cho ai dùng từ khóa 'new' tạo object này

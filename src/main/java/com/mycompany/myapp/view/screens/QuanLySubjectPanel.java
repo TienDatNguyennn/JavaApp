@@ -203,8 +203,18 @@ public class QuanLySubjectPanel extends JPanel {
     private JButton createStyledButton(String text, Color bg) {
         JButton btn = new JButton(text);
         btn.setBackground(bg); btn.setForeground(Color.WHITE);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.setFocusPainted(false); btn.setOpaque(true); btn.setBorderPainted(false);
         btn.setPreferredSize(new Dimension(100, 35));
+        // THÊM HIỆU ỨNG HOVER LÀM ĐẬM MÀU
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btn.setBackground(bg.darker()); // Làm đậm màu nền khi trỏ chuột vào
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btn.setBackground(bg); // Trả lại màu gốc khi chuột rời đi
+            }
+        });
         return btn;
     }
 
