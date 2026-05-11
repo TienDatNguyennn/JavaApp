@@ -14,7 +14,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
-public class BaoCaoHocTapPanel extends JPanel {
+public class StudyReportPanel extends JPanel {
 
     private JTable tblReports;
     private DefaultTableModel tableModel;
@@ -26,7 +26,7 @@ public class BaoCaoHocTapPanel extends JPanel {
     private JTextField txtSearchStudent;
     private boolean isDataLoaded = false; // Cờ kiểm soát việc load combo box
 
-    public BaoCaoHocTapPanel() {
+    public StudyReportPanel() {
         initComponents();
         loadDataFromDB(); 
     }
@@ -47,31 +47,45 @@ public class BaoCaoHocTapPanel extends JPanel {
         pnlCards.add(createStatCard("Học viên ĐẠT", lblPassed, new Color(34, 197, 94)));  
         pnlCards.add(createStatCard("Học viên CHƯA ĐẠT", lblFailed, new Color(239, 68, 68)));    
 
-        // 2. MIDDLE TOOLBAR
-        JPanel pnlToolbar = new JPanel(new BorderLayout());
+        // ==========================================
+        // 2. MIDDLE TOOLBAR (Cấu trúc: Title trên, Lọc trái, Tìm phải)
+        // ==========================================
+        JPanel pnlToolbar = new JPanel(new BorderLayout(0, 10)); // Gap dọc 10px giữa 2 dòng
         pnlToolbar.setBackground(new Color(248, 250, 252));
+        pnlToolbar.setBorder(new EmptyBorder(10, 0, 10, 0));
 
-        JPanel pnlLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        pnlLeft.setBackground(new Color(248, 250, 252));
-        JLabel lblTitle = new JLabel("Báo Cáo Học Tập");
+        // --- DÒNG 1: Tiêu đề đứng độc lập phía trên ---
+        JPanel pnlTitle = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        pnlTitle.setBackground(new Color(248, 250, 252));
+        
+        JLabel lblTitle = new JLabel("BÁO CÁO HỌC TẬP"); // Đã viết hoa theo yêu cầu
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        pnlTitle.add(lblTitle);
+
+        // --- DÒNG 2: Khu vực công cụ (Chia làm 2 ngả Trái/Phải) ---
+        JPanel pnlControls = new JPanel(new BorderLayout());
+        pnlControls.setBackground(new Color(248, 250, 252));
+
+        // 2.1 Bên Trái: Nhóm Bộ Lọc
+        JPanel pnlFilters = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        pnlFilters.setBackground(new Color(248, 250, 252));
         
         cbxClassFilter = new JComboBox<>();
         cbxClassFilter.setPreferredSize(new Dimension(180, 35));
-        cbxClassFilter.addActionListener(e -> applyFilters()); // Gắn sự kiện lọc
+        cbxClassFilter.addActionListener(e -> applyFilters());
         
         cbxResultFilter = new JComboBox<>(new String[]{"Tất cả kết quả", "ĐẠT", "CHƯA ĐẠT"});
         cbxResultFilter.setPreferredSize(new Dimension(140, 35));
-        cbxResultFilter.addActionListener(e -> applyFilters()); // Gắn sự kiện lọc
+        cbxResultFilter.addActionListener(e -> applyFilters());
 
-        pnlLeft.add(lblTitle);
-        pnlLeft.add(new JLabel("  Lớp học:"));
-        pnlLeft.add(cbxClassFilter);
-        pnlLeft.add(new JLabel("  Kết quả:"));
-        pnlLeft.add(cbxResultFilter);
+        pnlFilters.add(new JLabel("Lớp học:")); // Bỏ khoảng trắng thừa cho sát lề
+        pnlFilters.add(cbxClassFilter);
+        pnlFilters.add(new JLabel("  Kết quả:"));
+        pnlFilters.add(cbxResultFilter);
 
-        JPanel pnlRight = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        pnlRight.setBackground(new Color(248, 250, 252));
+        // 2.2 Bên Phải: Nhóm Tìm kiếm & Nút
+        JPanel pnlSearchAction = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        pnlSearchAction.setBackground(new Color(248, 250, 252));
 
         txtSearchStudent = new JTextField(15);
         txtSearchStudent.setText("Tìm họ tên học viên...");
@@ -92,16 +106,22 @@ public class BaoCaoHocTapPanel extends JPanel {
 
         JButton btnSearch = createStyledButton("Tìm", new Color(59, 130, 246));
         btnSearch.setPreferredSize(new Dimension(70, 35));
-        btnSearch.addActionListener(e -> applyFilters()); // Bấm tìm là lọc
+        btnSearch.addActionListener(e -> applyFilters());
         
         JButton btnExport = createStyledButton("Xuất Excel", new Color(34, 197, 94));
         btnExport.setPreferredSize(new Dimension(110, 35));
-        btnExport.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Tính năng Xuất Excel sẽ được triển khai ở giai đoạn cuối!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-        });
 
-        pnlRight.add(txtSearchStudent); pnlRight.add(btnSearch); pnlRight.add(btnExport);
-        pnlToolbar.add(pnlLeft, BorderLayout.WEST); pnlToolbar.add(pnlRight, BorderLayout.EAST);
+        pnlSearchAction.add(txtSearchStudent);
+        pnlSearchAction.add(btnSearch);
+        pnlSearchAction.add(btnExport);
+
+        // Gắn Trái và Phải vào Dòng 2
+        pnlControls.add(pnlFilters, BorderLayout.WEST);
+        pnlControls.add(pnlSearchAction, BorderLayout.EAST);
+
+        // Cuối cùng: Gắn Dòng 1 (Title) và Dòng 2 (Controls) vào Toolbar tổng
+        pnlToolbar.add(pnlTitle, BorderLayout.NORTH);
+        pnlToolbar.add(pnlControls, BorderLayout.CENTER);
 
         // 3. BẢNG DỮ LIỆU
         String[] columns = {"STT", "Mã HV", "Họ và Tên", "Lớp Học", "Điểm TB", "Xếp Loại", "Kết Quả"};
@@ -253,6 +273,6 @@ public class BaoCaoHocTapPanel extends JPanel {
         JFrame f = new JFrame("Gói 6 - Báo Cáo Học Tập");
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         f.setSize(1200, 750); f.setLocationRelativeTo(null);
-        f.add(new BaoCaoHocTapPanel()); f.setVisible(true);
+        f.add(new StudyReportPanel()); f.setVisible(true);
     }
 }

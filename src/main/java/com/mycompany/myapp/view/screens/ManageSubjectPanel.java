@@ -13,7 +13,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 
-public class QuanLySubjectPanel extends JPanel {
+public class ManageSubjectPanel extends JPanel {
 
     private JTable tblSubjects;
     private DefaultTableModel tableModel;
@@ -23,7 +23,7 @@ public class QuanLySubjectPanel extends JPanel {
     private JComboBox<String> cbxFilterStatus;
     private JTextField txtSearch;
 
-    public QuanLySubjectPanel() {
+    public ManageSubjectPanel() {
         initComponents();
         loadData(); 
     }
@@ -41,38 +41,55 @@ public class QuanLySubjectPanel extends JPanel {
         pnlCards.add(createStatCard("Đang giảng dạy", lblActive, new Color(34, 197, 94)));  
         pnlCards.add(createStatCard("Ngừng đào tạo", lblInactive, new Color(239, 68, 68)));    
 
-        // 2. MIDDLE TOOLBAR
-        JPanel pnlToolbar = new JPanel(new BorderLayout());
+        // ==========================================
+        // 2. MIDDLE TOOLBAR (Cấu trúc: Title trên, Lọc trái, Công cụ phải)
+        // ==========================================
+        JPanel pnlToolbar = new JPanel(new BorderLayout(0, 10)); // Gap dọc 10px
         pnlToolbar.setBackground(new Color(248, 250, 252));
+        pnlToolbar.setBorder(new EmptyBorder(10, 0, 10, 0));
+
+        // --- DÒNG 1: Tiêu đề đứng độc lập ---
+        JPanel pnlTitle = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        pnlTitle.setBackground(new Color(248, 250, 252));
         
-        JPanel pnlLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
-        pnlLeft.setBackground(new Color(248, 250, 252));
-        JLabel lblTitle = new JLabel("Danh sách Môn học");
+        JLabel lblTitle = new JLabel("QUẢN LÝ MÔN HỌC"); // Viết hoa đồng bộ với Gói 6
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        cbxFilterStatus = new JComboBox<>(new String[]{"Đang giảng dạy", "Ngừng đào tạo", "Tất cả"});
+        pnlTitle.add(lblTitle);
+
+        // --- DÒNG 2: Khu vực công cụ (Trái/Phải) ---
+        JPanel pnlControls = new JPanel(new BorderLayout());
+        pnlControls.setBackground(new Color(248, 250, 252));
+
+        // 2.1 Bên Trái: Nhóm Bộ Lọc
+        JPanel pnlFilters = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        pnlFilters.setBackground(new Color(248, 250, 252));
+        
+        cbxFilterStatus = new JComboBox<>(new String[]{"Tất cả", "Đang giảng dạy", "Ngừng đào tạo"});
         cbxFilterStatus.setPreferredSize(new Dimension(150, 35));
         cbxFilterStatus.addActionListener(e -> {
             txtSearch.setText("Nhập tên môn học...");
             txtSearch.setForeground(Color.GRAY);
             loadData();
         });
-        pnlLeft.add(lblTitle); pnlLeft.add(new JLabel("  Lọc:")); pnlLeft.add(cbxFilterStatus);
+        
+        pnlFilters.add(new JLabel("Lọc trạng thái:"));
+        pnlFilters.add(cbxFilterStatus);
 
-        JPanel pnlActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        pnlActions.setBackground(new Color(248, 250, 252));
+        // 2.2 Bên Phải: Nhóm Tìm kiếm & Nút chức năng
+        JPanel pnlSearchAction = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        pnlSearchAction.setBackground(new Color(248, 250, 252));
+
         txtSearch = new JTextField(15);
         txtSearch.setPreferredSize(new Dimension(180, 35));
         txtSearch.setText("Nhập tên môn học...");
         txtSearch.setForeground(Color.GRAY);
         txtSearch.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
+            @Override public void focusGained(FocusEvent e) {
                 if (txtSearch.getText().equals("Nhập tên môn học...")) {
                     txtSearch.setText(""); txtSearch.setForeground(Color.BLACK);
                 }
             }
-            @Override
-            public void focusLost(FocusEvent e) {
+            @Override public void focusLost(FocusEvent e) {
                 if (txtSearch.getText().isEmpty()) {
                     txtSearch.setForeground(Color.GRAY); txtSearch.setText("Nhập tên môn học...");
                 }
@@ -85,10 +102,22 @@ public class QuanLySubjectPanel extends JPanel {
         JButton btnEdit = createStyledButton("Sửa", new Color(245, 158, 11));     
         JButton btnDelete = createStyledButton("Xóa", new Color(239, 68, 68));    
 
-        setupActionListeners(btnAdd, btnEdit, btnDelete);
-        pnlActions.add(txtSearch); pnlActions.add(btnSearch); pnlActions.add(btnAdd); pnlActions.add(btnEdit); pnlActions.add(btnDelete);
+        // Gọi hàm gắn sự kiện đã có sẵn bên dưới
+        setupActionListeners(btnAdd, btnEdit, btnDelete); 
 
-        pnlToolbar.add(pnlLeft, BorderLayout.WEST); pnlToolbar.add(pnlActions, BorderLayout.EAST);
+        pnlSearchAction.add(txtSearch);
+        pnlSearchAction.add(btnSearch);
+        pnlSearchAction.add(btnAdd);
+        pnlSearchAction.add(btnEdit);
+        pnlSearchAction.add(btnDelete);
+
+        // Gắn Trái và Phải vào Dòng 2
+        pnlControls.add(pnlFilters, BorderLayout.WEST);
+        pnlControls.add(pnlSearchAction, BorderLayout.EAST);
+
+        // Cuối cùng: Gắn Dòng 1 (Title) và Dòng 2 (Controls) vào Toolbar tổng
+        pnlToolbar.add(pnlTitle, BorderLayout.NORTH);
+        pnlToolbar.add(pnlControls, BorderLayout.CENTER);
 
         // 3. BẢNG DỮ LIỆU
         tableModel = new DefaultTableModel(new String[]{"STT", "Mã Môn", "Tên Môn Học", "Mô Tả", "Trạng Thái"}, 0) {
@@ -174,21 +203,41 @@ public class QuanLySubjectPanel extends JPanel {
     }
 
     private void loadData() {
-        tableModel.setRowCount(0);
+        tableModel.setRowCount(0); 
         List<SubjectDTO> list = subjectDAO.getAllSubjects();
-        String key = txtSearch.getText().trim().toLowerCase();
-        if (key.equals("nhập tên môn học...")) key = "";
-        String filter = cbxFilterStatus.getSelectedItem().toString();
 
-        int total = 0, active = 0, inactive = 0, stt = 1;
+        String keyword = txtSearch.getText().trim().toLowerCase();
+        if (keyword.equals("nhập tên môn học...")) keyword = "";
+        String filterStatus = cbxFilterStatus.getSelectedItem().toString();
+
+        int countTotal = 0, countActive = 0, countInactive = 0;
+        int stt = 1;
+
         for (SubjectDTO s : list) {
-            total++; if (s.getStatus().equals("Đang giảng dạy")) active++; else inactive++;
-            if ((key.isEmpty() || s.getSubjectName().toLowerCase().contains(key)) && 
-                (filter.equals("Tất cả") || s.getStatus().equals(filter))) {
-                tableModel.addRow(new Object[]{stt++, s.getSubjectId(), s.getSubjectName(), s.getDescription(), s.getStatus()});
+            // FIX: Tính toán thống kê dựa trên TOÀN BỘ DB trước khi lọc
+            countTotal++;
+            if (s.getStatus().equals("Đang giảng dạy")) countActive++;
+            else countInactive++;
+
+            // FIX: Đã gỡ bỏ dòng code "tàng hình" (if status == ngừng đào tạo thì continue).
+            // Áp dụng bộ lọc ComboBox một cách tự nhiên
+            boolean matchKeyword = keyword.isEmpty() || s.getSubjectName().toLowerCase().contains(keyword);
+            boolean matchStatus = filterStatus.equals("Tất cả") || s.getStatus().equals(filterStatus);
+
+            if (matchKeyword && matchStatus) {
+                tableModel.addRow(new Object[]{
+                    stt++, 
+                    s.getSubjectId(), 
+                    s.getSubjectName(), 
+                    s.getDescription(), 
+                    s.getStatus() 
+                });
             }
         }
-        lblTotal.setText(String.valueOf(total)); lblActive.setText(String.valueOf(active)); lblInactive.setText(String.valueOf(inactive));
+
+        lblTotal.setText(String.valueOf(countTotal));
+        lblActive.setText(String.valueOf(countActive));
+        lblInactive.setText(String.valueOf(countInactive));
     }
 
     private JPanel createStatCard(String title, JLabel lblValue, Color iconColor) {
@@ -222,6 +271,6 @@ public class QuanLySubjectPanel extends JPanel {
         try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception e) {}
         JFrame f = new JFrame("SIS - Quản Lý Môn Học");
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); f.setSize(1100, 700);
-        f.setLocationRelativeTo(null); f.add(new QuanLySubjectPanel()); f.setVisible(true);
+        f.setLocationRelativeTo(null); f.add(new ManageSubjectPanel()); f.setVisible(true);
     }
 }

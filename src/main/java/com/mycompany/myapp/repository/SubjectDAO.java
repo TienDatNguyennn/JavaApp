@@ -75,16 +75,24 @@ public class SubjectDAO {
     // ==========================================
     // 2. HÀM CẬP NHẬT (UPDATE)
     // ==========================================
+    // ==========================================
+    // 2. HÀM CẬP NHẬT (UPDATE) - ĐÃ FIX TRẠNG THÁI
+    // ==========================================
     public boolean updateSubject(SubjectDTO subject) {
-        // Cập nhật tên, mô tả và thời gian cập nhật
-        String sql = "UPDATE SUBJECT SET subject_name = ?, description = ?, updated_at = SYSDATE WHERE subject_id = ?";
+        // Bổ sung thêm is_deleted = ? vào câu SQL
+        String sql = "UPDATE SUBJECT SET subject_name = ?, description = ?, is_deleted = ?, updated_at = SYSDATE WHERE subject_id = ?";
         
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             
             ps.setString(1, subject.getSubjectName());
             ps.setString(2, subject.getDescription());
-            ps.setInt(3, subject.getSubjectId());
+            
+            // Logic ép kiểu: Đang giảng dạy -> 0, Ngừng đào tạo -> 1
+            int isDeleted = (subject.getStatus() != null && subject.getStatus().equals("Đang giảng dạy")) ? 0 : 1;
+            ps.setInt(3, isDeleted);
+            
+            ps.setInt(4, subject.getSubjectId());
             
             return ps.executeUpdate() > 0;
             
