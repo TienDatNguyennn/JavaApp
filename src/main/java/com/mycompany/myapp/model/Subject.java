@@ -9,8 +9,6 @@ public class Subject {
     private String SubjectId;       // Mã khóa học (Khóa chính)
     private String SubjectName;     // Tên khóa học
     private String description;    // Mô tả chi tiết chương trình học
-    private int totalSessions;     // Tổng số buổi học quy định
-    private double tuitionFee;     // Học phí tiêu chuẩn
     private String status;         // Trạng thái: "ACTIVE" (Đang mở) hoặc "DELETED" (Đã xóa)
 
     // ==========================================
@@ -23,28 +21,26 @@ public class Subject {
         this.SubjectId = SubjectId;
         this.SubjectName = SubjectName;
         this.description = description;
-        this.totalSessions = totalSessions;
-        this.tuitionFee = tuitionFee;
         this.status = status;
     }
 
     // ==========================================
     // 2. GETTERS & SETTERS
     // ==========================================
-    public String getCourseId() {
+    public String getSubjectId() {
         return SubjectId;
     }
 
-    public void setCourseId(String courseId) {
-        this.SubjectId = courseId;
+    public void setSubjectId(String SubjectId) {
+        this.SubjectId = SubjectId;
     }
 
-    public String getCourseName() {
+    public String getSubjectName() {
         return SubjectName;
     }
 
-    public void setCourseName(String courseName) {
-        this.SubjectName = courseName;
+    public void setCourseName(String SubjectName) {
+        this.SubjectName = SubjectName;
     }
 
     public String getDescription() {
@@ -53,22 +49,6 @@ public class Subject {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public int getTotalSessions() {
-        return totalSessions;
-    }
-
-    public void setTotalSessions(int totalSessions) {
-        this.totalSessions = totalSessions;
-    }
-
-    public double getTuitionFee() {
-        return tuitionFee;
-    }
-
-    public void setTuitionFee(double tuitionFee) {
-        this.tuitionFee = tuitionFee;
     }
 
     public String getStatus() {
@@ -87,8 +67,6 @@ public class Subject {
         return "Course{" +
                 "courseId='" + SubjectId + '\'' +
                 ", courseName='" + SubjectName + '\'' +
-                ", totalSessions=" + totalSessions +
-                ", tuitionFee=" + tuitionFee +
                 ", status='" + status + '\'' +
                 '}';
     }

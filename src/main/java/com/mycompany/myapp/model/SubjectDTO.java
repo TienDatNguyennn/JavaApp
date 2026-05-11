@@ -1,78 +1,33 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-package com.mycompany.myapp.model;
+package com.mycompany.myapp.model; // Nhớ đổi tên package cho khớp máy bạn
 
-import java.text.DecimalFormat;
-
-/**
- *
- * @author PC
- */
 public class SubjectDTO {
-    private String SubjectId;
-    private String SubjectName;
-    private int totalSessions;
-    private double tuitionFee;
-    private String status;
-    
-    // Trường bổ sung: Đếm số lớp học đang dạy khóa này (Nếu team có yêu cầu thống kê)
-    // private int activeClassesCount; 
+    private int subjectId;
+    private String subjectName;
+    private String description;
+    private String status; // Hứng trạng thái luận lý từ is_deleted
 
+    // Constructor rỗng (Bắt buộc cho DAO)
     public SubjectDTO() {
     }
 
-    public SubjectDTO(String SubjectId, String SubjectName, int totalSessions, double tuitionFee, String status) {
-        this.SubjectId = SubjectId;
-        this.SubjectName = SubjectName;
-        this.totalSessions = totalSessions;
-        this.tuitionFee = tuitionFee;
+    // Constructor đầy đủ
+    public SubjectDTO(int subjectId, String subjectName, String description, String status) {
+        this.subjectId = subjectId;
+        this.subjectName = subjectName;
+        this.description = description;
         this.status = status;
     }
 
-    // Getters & Setters
-    public String getSubjectId() { return SubjectId; }
-    public void setSubjectId(String courseId) { this.SubjectId = courseId; }
-    public String getSubjectName() { return SubjectName; }
-    public void setSubjectName(String courseName) { this.SubjectName = courseName; }
-    public int getTotalSessions() { return totalSessions; }
-    public void setTotalSessions(int totalSessions) { this.totalSessions = totalSessions; }
-    public double getTuitionFee() { return tuitionFee; }
-    public void setTuitionFee(double tuitionFee) { this.tuitionFee = tuitionFee; }
+    // --- GETTER & SETTER ---
+    public int getSubjectId() { return subjectId; }
+    public void setSubjectId(int subjectId) { this.subjectId = subjectId; }
+
+    public String getSubjectName() { return subjectName; }
+    public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
-
-    /**
-     * Hàm định dạng tiền tệ (VNĐ) để hiển thị đẹp mắt trên giao diện
-     */
-    private String getFormattedTuitionFee() {
-        DecimalFormat formatter = new DecimalFormat("###,###,### VNĐ");
-        return formatter.format(tuitionFee);
-    }
-
-    /**
-     * Hàm xử lý hiển thị trạng thái bằng Tiếng Việt
-     */
-    private String getDisplayStatus() {
-        if ("ACTIVE".equalsIgnoreCase(status)) return "Đang hoạt động";
-        if ("DELETED".equalsIgnoreCase(status)) return "Đã tạm ngưng";
-        return status;
-    }
-
-    /**
-     * TÍNH NĂNG ĐẶC BIỆT: Chuyển thẳng Object thành 1 dòng (Row) cho JTable
-     * @param stt Số thứ tự của dòng trên bảng
-     * @return Mảng Object tương ứng với các cột trên bảng
-     */
-    public Object[] toTableRow(int stt) {
-        return new Object[]{
-            stt, 
-            this.SubjectId, 
-            this.SubjectName, 
-            this.totalSessions + " buổi", 
-            getFormattedTuitionFee(), 
-            getDisplayStatus()
-        };
-    }
 }
