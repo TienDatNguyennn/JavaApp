@@ -10,13 +10,16 @@ com\mycompany\myapp\view\screens\finance\ManageInvoicePanel.class
 com\mycompany\myapp\view\screens\LoginUI.class
 com\mycompany\myapp\service\InvoiceService.class
 com\mycompany\myapp\view\screens\finance\PaymentPanel$2.class
+com\mycompany\myapp\view\screens\finance\InvoiceFormDialog$1.class
 com\mycompany\myapp\view\screens\finance\InvoiceIssuePanel$2.class
 com\mycompany\myapp\model\Payroll.class
 com\mycompany\myapp\view\screens\LoginUI$PlaceholderTextField.class
 com\mycompany\myapp\view\components\PermissionPanel$1.class
 com\mycompany\myapp\view\screens\LoginUI$1.class
+com\mycompany\myapp\view\screens\finance\ManageInvoicePanel$3.class
 com\mycompany\myapp\view\screens\finance\LookupPanel$ButtonEditor.class
 com\mycompany\myapp\Main.class
+com\mycompany\myapp\view\screens\finance\InvoiceFormDialog.class
 com\mycompany\myapp\view\screens\finance\LookupPanel$2.class
 com\mycompany\myapp\view\screens\finance\LookupPanel$ButtonRenderer.class
 com\mycompany\myapp\config\DBConnection.class
@@ -25,6 +28,7 @@ com\mycompany\myapp\view\screens\finance\ManageInvoicePanel$1.class
 com\mycompany\myapp\view\screens\finance\PaymentPanel$3.class
 com\mycompany\myapp\view\screens\LoginUI$2.class
 com\mycompany\myapp\model\FunctionPermission.class
+com\mycompany\myapp\view\screens\finance\ManageInvoicePanel$4.class
 com\mycompany\myapp\view\screens\finance\PayrollPanel$2.class
 com\mycompany\myapp\model\Invoice.class
 com\mycompany\myapp\view\components\CustomButton$1.class
@@ -36,6 +40,7 @@ com\mycompany\myapp\view\screens\finance\PaymentPanel$1.class
 com\mycompany\myapp\service\PayrollService.class
 com\mycompany\myapp\model\Role.class
 com\mycompany\myapp\view\screens\finance\InvoiceIssuePanel.class
+com\mycompany\myapp\view\screens\finance\InvoiceFormDialog$2.class
 com\mycompany\myapp\view\screens\finance\LookupPanel$3.class
 com\mycompany\myapp\view\screens\finance\PayrollPanel.class
 com\mycompany\myapp\controller\FinanceController.class
