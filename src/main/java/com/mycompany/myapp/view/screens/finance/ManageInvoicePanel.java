@@ -70,7 +70,7 @@ public class ManageInvoicePanel extends JPanel {
         title.setFont(new Font("Segoe UI", Font.BOLD, 20));
         title.setForeground(TEXT_MAIN);
 
-        JLabel sub = new JLabel("Them, sua, xoa va doi soat hoa don hoc phi");
+        JLabel sub = new JLabel("Xem, thêm, sửa, xóa và đối soát danh sách hóa đơn học phí");
         sub.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         sub.setForeground(TEXT_MUTE);
 

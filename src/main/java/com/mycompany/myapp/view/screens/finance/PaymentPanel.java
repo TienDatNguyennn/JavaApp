@@ -174,7 +174,7 @@ public class PaymentPanel extends JPanel {
         card.add(Box.createVerticalStrut(16));
 
         // Nút xác nhận
-        CustomButton btnConfirm = new CustomButton("✔  Xác nhận thanh toán");
+        CustomButton btnConfirm = new CustomButton("✔ Xác nhận thanh toán");
         btnConfirm.setColors(SUCCESS, SUCCESS.darker());
         btnConfirm.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btnConfirm.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));

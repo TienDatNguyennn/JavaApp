@@ -130,15 +130,15 @@ public class PayrollPanel extends JPanel {
         cmbStaffType = new JComboBox<>(new String[]{"Tất cả","TEACHER","OFFICE"});
         txtSearchName = new JTextField(10);
 
-        CustomButton btnLoad = new CustomButton("📊 Lọc");
+        CustomButton btnLoad = new CustomButton("Lọc");
         btnLoad.setColors(PRIMARY, PRIMARY.darker());
         btnLoad.addActionListener(e -> loadData());
 
-        btnEdit = new CustomButton("✏ Sửa");
+        btnEdit = new CustomButton("Sửa");
         btnEdit.setColors(new Color(255, 159, 67), new Color(255, 159, 67).darker());
         btnEdit.addActionListener(e -> prepareEdit());
 
-        btnDelete = new CustomButton("🗑 Xóa");
+        btnDelete = new CustomButton("Xóa");
         btnDelete.setColors(new Color(238, 82, 83), new Color(194, 54, 22));
         btnDelete.addActionListener(e -> deletePayroll());
 
