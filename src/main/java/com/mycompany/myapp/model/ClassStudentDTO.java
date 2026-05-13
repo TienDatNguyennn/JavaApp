@@ -1,72 +1,34 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.mycompany.myapp.model;
 
-/**
- *
- * @author Tien Dat
- */
+import java.util.Date;
 
-import java.sql.Date;
-
-/**
- * Data Transfer Object cho Danh sách học viên trong lớp
- */
 public class ClassStudentDTO {
     private int studentId;
-    private String studentName;
+    private String fullName;
+    private Date dob;
+    private String gender; // 'M' hoặc 'F'
     private String phone;
     private String parentName;
-    private String className;
-    private Date enrollDate;
-    private String status;
+    private String parentPhone;
+    private String status; // Trạng thái học: ACTIVE, RESERVED, DROPPED
 
-    public ClassStudentDTO() {
-    }
+    public ClassStudentDTO() {}
 
-    public ClassStudentDTO(int studentId, String studentName, String phone, String parentName, String className, Date enrollDate, String status) {
-        this.studentId = studentId;
-        this.studentName = studentName;
-        this.phone = phone;
-        this.parentName = parentName;
-        this.className = className;
-        this.enrollDate = enrollDate;
-        this.status = status;
-    }
-
+    // GETTERS & SETTERS
     public int getStudentId() { return studentId; }
     public void setStudentId(int studentId) { this.studentId = studentId; }
-
-    public String getStudentName() { return studentName; }
-    public void setStudentName(String studentName) { this.studentName = studentName; }
-
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
+    public Date getDob() { return dob; }
+    public void setDob(Date dob) { this.dob = dob; }
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
-
     public String getParentName() { return parentName; }
     public void setParentName(String parentName) { this.parentName = parentName; }
-
-    public String getClassName() { return className; }
-    public void setClassName(String className) { this.className = className; }
-
-    public Date getEnrollDate() { return enrollDate; }
-    public void setEnrollDate(Date enrollDate) { this.enrollDate = enrollDate; }
-
+    public String getParentPhone() { return parentPhone; }
+    public void setParentPhone(String parentPhone) { this.parentPhone = parentPhone; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
-
-    @Override
-    public String toString() {
-        return "ClassStudentDTO{" +
-                "studentId=" + studentId +
-                ", studentName='" + studentName + '\'' +
-                ", phone='" + phone + '\'' +
-                ", parentName='" + parentName + '\'' +
-                ", className='" + className + '\'' +
-                ", enrollDate=" + enrollDate +
-                ", status='" + status + '\'' +
-                '}';
-    }
 }

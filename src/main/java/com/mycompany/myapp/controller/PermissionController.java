@@ -1,25 +1,26 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.mycompany.myapp.controller;
 
-/**
- *
- * @author Tien Dat
- */
 import com.mycompany.myapp.model.PermissionDTO;
 import com.mycompany.myapp.service.PermissionService;
+import java.sql.SQLException;
 import java.util.List;
 
 public class PermissionController {
     private PermissionService service = new PermissionService();
 
-    public List<PermissionDTO> getPermissions(int roleGroupId) throws Exception {
+    public List<PermissionDTO> getPermissions(int roleGroupId) throws SQLException {
         return service.loadPermissions(roleGroupId);
     }
 
-    public void updatePermissions(List<PermissionDTO> permissions) throws Exception {
+    public void updatePermissions(List<PermissionDTO> permissions) throws SQLException {
         service.savePermissions(permissions);
+    }
+
+    public List<PermissionDTO> getPermissionsByAccount(int accountId) throws SQLException {
+        return service.getPermissionsByAccount(accountId);
+    }
+
+    public void updateAccountCustomPermissions(int accountId, List<PermissionDTO> permissions) throws SQLException {
+        service.updateAccountCustomPermissions(accountId, permissions);
     }
 }

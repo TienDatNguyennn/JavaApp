@@ -76,4 +76,12 @@ public class SessionStore {
         userInfo = null;
         roles = null;
     }
+    
+    // Thêm vào SessionStore.java
+    public static Integer getUserId() {
+        if (userInfo != null && userInfo.get("user_id") != null) {
+            return (Integer) userInfo.get("user_id");
+        }
+        return -1; 
+    }
 }
