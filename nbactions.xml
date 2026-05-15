@@ -7,13 +7,21 @@
             </packagings>
             <goals>
                 <goal>process-classes</goal>
+<<<<<<< HEAD
+                <goal>org.codehaus.mojo:exec-maven-plugin:3.1.0:exec</goal>
+=======
                 <goal>org.codehaus.mojo:exec-maven-plugin:3.5.1:exec</goal>
+>>>>>>> main
             </goals>
             <properties>
                 <exec.vmArgs></exec.vmArgs>
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.appArgs></exec.appArgs>
+<<<<<<< HEAD
+                <exec.mainClass>com.mycompany.myapp.Main</exec.mainClass>
+=======
                 <exec.mainClass>com.mycompany.myapp.view.screens.Main</exec.mainClass>
+>>>>>>> main
                 <exec.executable>java</exec.executable>
             </properties>
         </action>
@@ -24,13 +32,21 @@
             </packagings>
             <goals>
                 <goal>process-classes</goal>
+<<<<<<< HEAD
+                <goal>org.codehaus.mojo:exec-maven-plugin:3.1.0:exec</goal>
+=======
                 <goal>org.codehaus.mojo:exec-maven-plugin:3.5.1:exec</goal>
+>>>>>>> main
             </goals>
             <properties>
                 <exec.vmArgs>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.appArgs></exec.appArgs>
+<<<<<<< HEAD
+                <exec.mainClass>com.mycompany.myapp.Main</exec.mainClass>
+=======
                 <exec.mainClass>com.mycompany.myapp.view.screens.Main</exec.mainClass>
+>>>>>>> main
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
             </properties>
@@ -42,12 +58,20 @@
             </packagings>
             <goals>
                 <goal>process-classes</goal>
+<<<<<<< HEAD
+                <goal>org.codehaus.mojo:exec-maven-plugin:3.1.0:exec</goal>
+=======
                 <goal>org.codehaus.mojo:exec-maven-plugin:3.5.1:exec</goal>
+>>>>>>> main
             </goals>
             <properties>
                 <exec.vmArgs></exec.vmArgs>
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
+<<<<<<< HEAD
+                <exec.mainClass>com.mycompany.myapp.Main</exec.mainClass>
+=======
                 <exec.mainClass>com.mycompany.myapp.view.screens.Main</exec.mainClass>
+>>>>>>> main
                 <exec.executable>java</exec.executable>
                 <exec.appArgs></exec.appArgs>
             </properties>
