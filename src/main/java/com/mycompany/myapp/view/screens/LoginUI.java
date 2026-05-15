@@ -409,7 +409,7 @@ public class LoginUI extends JFrame {
             // --- 1. TOP HEADER ---
             JPanel topHeader = createModernHeader(mainFrame, fullName);
             
-            // --- 2. SIDEBAR (Màu Tím `#6E58D7`) ---
+            // --- 2. SIDEBAR CHÍNH (Màu Tím `#6E58D7`) ---
             JPanel sidebar = new JPanel();
             sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
             sidebar.setBackground(Color.decode("#6E58D7")); 
@@ -436,22 +436,22 @@ public class LoginUI extends JFrame {
             
             if (roles.contains("Nhan_Vien_Quan_Ly_He_Thong")) {
                 // QUYỀN QUẢN TRỊ HỆ THỐNG
-                contentPanel.add(new com.mycompany.myapp.view.screens.AccountManagerUI(), "ACCOUNT_MGR");
-                contentPanel.add(new com.mycompany.myapp.view.screens.SystemConfigUI(), "SYSTEM_CFG");
+                contentPanel.add(new com.mycompany.myapp.view.screens.system.AccountManagerUI(), "ACCOUNT_MGR");
+                contentPanel.add(new com.mycompany.myapp.view.screens.system.SystemConfigUI(), "SYSTEM_CFG");
                 
                 sidebar.add(createNavBtn("Quản lý tài khoản", "ACCOUNT_MGR", contentPanel, cardLayout, navButtons));
                 sidebar.add(createNavBtn("Cấu hình hệ thống", "SYSTEM_CFG", contentPanel, cardLayout, navButtons));
                 
             } else if (roles.contains("Giao_Vien")) {
-                // QUYỀN GIÁO VIÊN (Tích hợp 8 Module đã xây dựng)
-                contentPanel.add(new com.mycompany.myapp.view.screens.DashboardPanel(), "DASHBOARD");
-                contentPanel.add(new com.mycompany.myapp.view.screens.SchedulePanel(), "SCHEDULE");
-                contentPanel.add(new com.mycompany.myapp.view.screens.StudentListPanel(), "STUDENT_LIST");
-                contentPanel.add(new com.mycompany.myapp.view.screens.AttendancePanel(), "ATTENDANCE");
-                contentPanel.add(new com.mycompany.myapp.view.screens.AttendanceAnalyticsPanel(), "ATTENDANCE_ANA");
-                contentPanel.add(new com.mycompany.myapp.view.screens.GradeEntryPanel(), "GRADE_ENTRY");
-                contentPanel.add(new com.mycompany.myapp.view.screens.AcademicResultPanel(), "ACADEMIC_RESULT");
-                contentPanel.add(new com.mycompany.myapp.view.screens.TeacherProfilePanel(), "PROFILE");
+                // QUYỀN GIÁO VIÊN
+                contentPanel.add(new com.mycompany.myapp.view.screens.finance.DashboardPanel(), "DASHBOARD");
+                contentPanel.add(new com.mycompany.myapp.view.screens.teacher.SchedulePanel(), "SCHEDULE");
+                contentPanel.add(new com.mycompany.myapp.view.screens.teacher.StudentListPanel(), "STUDENT_LIST");
+                contentPanel.add(new com.mycompany.myapp.view.screens.teacher.AttendancePanel(), "ATTENDANCE");
+                contentPanel.add(new com.mycompany.myapp.view.screens.teacher.AttendanceAnalyticsPanel(), "ATTENDANCE_ANA");
+                contentPanel.add(new com.mycompany.myapp.view.screens.teacher.GradeEntryPanel(), "GRADE_ENTRY");
+                contentPanel.add(new com.mycompany.myapp.view.screens.teacher.AcademicResultPanel(), "ACADEMIC_RESULT");
+                contentPanel.add(new com.mycompany.myapp.view.screens.teacher.TeacherProfilePanel(), "PROFILE");
 
                 sidebar.add(createNavBtn("Tổng quan (Dashboard)", "DASHBOARD", contentPanel, cardLayout, navButtons));
                 sidebar.add(createNavBtn("Thời khóa biểu", "SCHEDULE", contentPanel, cardLayout, navButtons));
@@ -461,11 +461,42 @@ public class LoginUI extends JFrame {
                 sidebar.add(createNavBtn("Nhập điểm lớp học", "GRADE_ENTRY", contentPanel, cardLayout, navButtons));
                 sidebar.add(createNavBtn("Báo cáo kết quả", "ACADEMIC_RESULT", contentPanel, cardLayout, navButtons));
                 sidebar.add(createNavBtn("Hồ sơ cá nhân", "PROFILE", contentPanel, cardLayout, navButtons));
+                
+            } else if (roles.contains("Nhan_Vien_Ke_Toan") || roles.contains("Nhan_Vien_Quan_Ly_Nghiep_Vu")) {
+                
+                // 1. Thêm trực tiếp các màn hình con vào contentPanel chính
+                contentPanel.add(new com.mycompany.myapp.view.screens.finance.PaymentPanel(), "FIN_PAYMENT");
+                contentPanel.add(new com.mycompany.myapp.view.screens.finance.ManageInvoicePanel(), "FIN_MANAGE");
+                contentPanel.add(new com.mycompany.myapp.view.screens.finance.LookupPanel(), "FIN_LOOKUP");
+                contentPanel.add(new com.mycompany.myapp.view.screens.finance.InvoiceIssuePanel(), "FIN_ISSUE");
+                contentPanel.add(new com.mycompany.myapp.view.screens.finance.PayrollPanel(), "FIN_PAYROLL");
+
+                // 2. Tạo Label phân cách (Section) "HỌC PHÍ"
+                JLabel lblTuition = new JLabel("HỌC PHÍ");
+                lblTuition.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                lblTuition.setForeground(Color.decode("#A5B4FC")); // Màu tím nhạt cho tiêu đề phụ
+                lblTuition.setBorder(new EmptyBorder(15, 25, 5, 0));
+                sidebar.add(lblTuition);
+
+                // 3. Đưa các nút chức năng trực tiếp ra Sidebar chính
+                sidebar.add(createNavBtn("Ghi nhận thanh toán", "FIN_PAYMENT", contentPanel, cardLayout, navButtons));
+                sidebar.add(createNavBtn("Quản lý học phí", "FIN_MANAGE", contentPanel, cardLayout, navButtons));
+                sidebar.add(createNavBtn("Tra cứu học phí", "FIN_LOOKUP", contentPanel, cardLayout, navButtons));
+                sidebar.add(createNavBtn("Hóa đơn điện tử", "FIN_ISSUE", contentPanel, cardLayout, navButtons));
+
+                // 4. Tạo Label phân cách (Section) "NHÂN SỰ"
+                JLabel lblHR = new JLabel("NHÂN SỰ");
+                lblHR.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                lblHR.setForeground(Color.decode("#A5B4FC")); 
+                lblHR.setBorder(new EmptyBorder(15, 25, 5, 0));
+                sidebar.add(lblHR);
+
+                sidebar.add(createNavBtn("Tính lương nhân viên", "FIN_PAYROLL", contentPanel, cardLayout, navButtons));
             }
             
             sidebar.add(Box.createVerticalGlue()); // Đẩy menu lên trên
 
-            // Lắp ráp
+            // Lắp ráp các phần vào Frame chính
             mainFrame.add(topHeader, BorderLayout.NORTH);
             mainFrame.add(sidebar, BorderLayout.WEST);
             mainFrame.add(contentPanel, BorderLayout.CENTER);

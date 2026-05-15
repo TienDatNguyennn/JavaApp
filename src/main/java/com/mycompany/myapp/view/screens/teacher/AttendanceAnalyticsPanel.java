@@ -1,4 +1,4 @@
-package com.mycompany.myapp.view.screens;
+package com.mycompany.myapp.view.screens.teacher;
 
 import com.mycompany.myapp.model.AttendanceAnalyticsDTO;
 import com.mycompany.myapp.service.AttendanceAnalyticsService;

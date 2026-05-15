@@ -1,4 +1,4 @@
-package com.mycompany.myapp.view.screens;
+package com.mycompany.myapp.view.screens.finance;
 
 import com.mycompany.myapp.service.DashboardService;
 import com.mycompany.myapp.utils.Result;

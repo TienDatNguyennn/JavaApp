@@ -1,4 +1,4 @@
-package com.mycompany.myapp.view.screens;
+package com.mycompany.myapp.view.screens.system;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;

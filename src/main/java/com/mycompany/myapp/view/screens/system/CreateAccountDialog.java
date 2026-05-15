@@ -1,4 +1,4 @@
-package com.mycompany.myapp.view.screens;
+package com.mycompany.myapp.view.screens.system;
 
 import com.mycompany.myapp.controller.AccountController;
 import com.mycompany.myapp.model.RoleGroup;
