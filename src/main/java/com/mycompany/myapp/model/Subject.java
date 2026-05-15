@@ -1,73 +1,65 @@
+
 package com.mycompany.myapp.model;
 
 /**
- * Entity ánh xạ với bảng COURSE trong Database.
- * Chứa toàn bộ thông tin gốc của một Khóa học/Môn học.
+ *
+ * @author Tien Dat
+ */
+
+
+
+import java.sql.Date;
+
+/**
+ * Model quản lý môn học
  */
 public class Subject {
-    
-    private String SubjectId;       // Mã khóa học (Khóa chính)
-    private String SubjectName;     // Tên khóa học
-    private String description;    // Mô tả chi tiết chương trình học
-    private String status;         // Trạng thái: "ACTIVE" (Đang mở) hoặc "DELETED" (Đã xóa)
+    private int subjectId;
+    private String subjectName;
+    private String description;
+    private Date createdAt;
+    private Date updatedAt;
+    private boolean isDeleted;
 
-    // ==========================================
-    // 1. CONSTRUCTORS
-    // ==========================================
     public Subject() {
     }
 
-    public Subject(String SubjectId, String SubjectName, String description, int totalSessions, double tuitionFee, String status) {
-        this.SubjectId = SubjectId;
-        this.SubjectName = SubjectName;
+    public Subject(int subjectId, String subjectName, String description, Date createdAt, Date updatedAt, boolean isDeleted) {
+        this.subjectId = subjectId;
+        this.subjectName = subjectName;
         this.description = description;
-        this.status = status;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.isDeleted = isDeleted;
     }
 
-    // ==========================================
-    // 2. GETTERS & SETTERS
-    // ==========================================
-    public String getSubjectId() {
-        return SubjectId;
-    }
+    public int getSubjectId() { return subjectId; }
+    public void setSubjectId(int subjectId) { this.subjectId = subjectId; }
 
-    public void setSubjectId(String SubjectId) {
-        this.SubjectId = SubjectId;
-    }
+    public String getSubjectName() { return subjectName; }
+    public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
 
-    public String getSubjectName() {
-        return SubjectName;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public void setCourseName(String SubjectName) {
-        this.SubjectName = SubjectName;
-    }
+    public Date getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
 
-    public String getDescription() {
-        return description;
-    }
+    public Date getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public boolean isDeleted() { return isDeleted; }
+    public void setDeleted(boolean deleted) { isDeleted = deleted; }
 
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    // ==========================================
-    // 3. TO STRING (Hỗ trợ Debug)
-    // ==========================================
     @Override
     public String toString() {
-        return "Course{" +
-                "courseId='" + SubjectId + '\'' +
-                ", courseName='" + SubjectName + '\'' +
-                ", status='" + status + '\'' +
+        return "Subject{" +
+                "subjectId=" + subjectId +
+                ", subjectName='" + subjectName + '\'' +
+                ", description='" + description + '\'' +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                ", isDeleted=" + isDeleted +
                 '}';
     }
 }

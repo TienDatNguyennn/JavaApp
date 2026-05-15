@@ -20,4 +20,11 @@ public class PasswordUtil {
         }
         return BCrypt.checkpw(plainPassword, hashedPassword);
     }
+    // Hàm kiểm tra mật khẩu (Dùng BCrypt)
+    public static boolean verifyPassword(String rawPassword, String hashedPassword) {
+        if (hashedPassword == null || !hashedPassword.startsWith("$2a$")) {
+            return false;
+        }
+        return org.mindrot.jbcrypt.BCrypt.checkpw(rawPassword, hashedPassword);
+    }
 }
