@@ -1,3 +1,40 @@
+<<<<<<< HEAD
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\config\DBConnection.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\controller\FinanceController.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\controller\LoginController.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\Main.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\model\Account.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\model\AccountDTO.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\model\FunctionPermission.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\model\Invoice.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\model\InvoiceDetail.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\model\Payroll.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\model\Role.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\model\RoleGroup.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\model\User.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\repository\AccountRepository.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\repository\InvoiceRepository.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\repository\PayrollRepository.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\service\AuthService.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\service\InvoiceService.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\service\PayrollService.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\service\PermissionService.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\service\UserService.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\utils\PasswordUtil.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\utils\SessionStore.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\utils\TokenService.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\view\components\CustomButton.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\view\components\PermissionPanel.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\view\screens\finance\FinanceMainPanel.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\view\screens\finance\InvoiceFormDialog.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\view\screens\finance\InvoiceIssuePanel.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\view\screens\finance\LookupPanel.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\view\screens\finance\ManageInvoicePanel.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\view\screens\finance\PaymentPanel.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\view\screens\finance\PayrollPanel.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\view\screens\FinanceFrame.java
+D:\projects\NetBeansProjects\JavaApp\src\main\java\com\mycompany\myapp\view\screens\LoginUI.java
+=======
 D:\JAVA\JavaApp\src\main\java\com\mycompany\myapp\config\DBConnection.java
 D:\JAVA\JavaApp\src\main\java\com\mycompany\myapp\controller\AccountController.java
 D:\JAVA\JavaApp\src\main\java\com\mycompany\myapp\controller\LoginController.java
@@ -68,3 +105,4 @@ D:\JAVA\JavaApp\src\main\java\com\mycompany\myapp\view\screens\StudentListPanel.
 D:\JAVA\JavaApp\src\main\java\com\mycompany\myapp\view\screens\SystemConfigUI.java
 D:\JAVA\JavaApp\src\main\java\com\mycompany\myapp\view\screens\TeacherProfilePanel.java
 D:\JAVA\JavaApp\src\main\java\DashboardRepository.java
+>>>>>>> main

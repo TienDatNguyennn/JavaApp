@@ -1,4 +1,16 @@
 com\mycompany\myapp\service\AuthService.class
+<<<<<<< HEAD
+com\mycompany\myapp\controller\LoginController.class
+com\mycompany\myapp\service\PayrollService.class
+com\mycompany\myapp\service\InvoiceService.class
+com\mycompany\myapp\model\Payroll.class
+com\mycompany\myapp\controller\FinanceController.class
+com\mycompany\myapp\Main.class
+com\mycompany\myapp\config\DBConnection.class
+com\mycompany\myapp\repository\InvoiceRepository.class
+com\mycompany\myapp\model\Invoice.class
+com\mycompany\myapp\repository\PayrollRepository.class
+=======
 com\mycompany\myapp\utils\PasswordUtil.class
 com\mycompany\myapp\model\Room.class
 com\mycompany\myapp\view\screens\AccountManagerUI$3.class
@@ -118,3 +130,4 @@ com\mycompany\myapp\view\components\UIKit$ModernTable.class
 com\mycompany\myapp\model\StudentAttendanceDTO.class
 com\mycompany\myapp\view\screens\LoginUI$RoundedButton$1.class
 com\mycompany\myapp\view\screens\LoginUI$RoundedButton.class
+>>>>>>> main
