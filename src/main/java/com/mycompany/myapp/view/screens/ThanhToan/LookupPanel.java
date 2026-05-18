@@ -1,4 +1,4 @@
-package com.mycompany.myapp.view.screens.finance;
+package com.mycompany.myapp.view.screens.ThanhToan;
 
 import com.mycompany.myapp.controller.FinanceController;
 import com.mycompany.myapp.model.Invoice;
@@ -167,7 +167,7 @@ public class LookupPanel extends JPanel {
             }
         });
 
-        CustomButton btnSearch = new CustomButton("🔍 Tìm");
+        CustomButton btnSearch = new CustomButton("Tìm");
         btnSearch.setColors(PRIMARY, PRIMARY.darker());
         btnSearch.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btnSearch.setPreferredSize(new Dimension(80, 30));
@@ -177,7 +177,7 @@ public class LookupPanel extends JPanel {
             loadData(kw.isEmpty() ? null : kw, "Tất cả".equals(st) ? null : st);
         });
 
-        CustomButton btnRemind = new CustomButton("🔔 Nhắc nợ hàng loạt");
+        CustomButton btnRemind = new CustomButton("Nhắc nợ hàng loạt");
         btnRemind.setColors(new Color(220, 53, 69), new Color(185, 40, 55));
         btnRemind.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btnRemind.setPreferredSize(new Dimension(160, 30));
@@ -327,7 +327,7 @@ public class LookupPanel extends JPanel {
             "Xác nhận", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             JOptionPane.showMessageDialog(this,
-                "✔ Đã gửi nhắc nhở đến " + count + " học viên.",
+                "Đã gửi nhắc nhở đến " + count + " học viên.",
                 "Thành công", JOptionPane.INFORMATION_MESSAGE);
         }
     }

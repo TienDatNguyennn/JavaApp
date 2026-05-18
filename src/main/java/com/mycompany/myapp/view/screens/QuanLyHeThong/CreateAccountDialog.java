@@ -1,4 +1,4 @@
-package com.mycompany.myapp.view.screens.system;
+package com.mycompany.myapp.view.screens.QuanLyHeThong;
 
 import com.mycompany.myapp.controller.AccountController;
 import com.mycompany.myapp.model.RoleGroup;

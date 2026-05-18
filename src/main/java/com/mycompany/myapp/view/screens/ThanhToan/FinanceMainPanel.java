@@ -1,4 +1,4 @@
-package com.mycompany.myapp.view.screens.finance;
+package com.mycompany.myapp.view.screens.ThanhToan;
 
 import javax.swing.*;
 import javax.swing.border.*;

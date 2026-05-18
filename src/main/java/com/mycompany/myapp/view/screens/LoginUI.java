@@ -20,7 +20,7 @@ public class LoginUI extends JFrame {
     }
 
     private void initUI() {
-        setTitle("Hệ Thống Quản Lý Đào Tạo Trực Tuyến – EduFlex");
+        setTitle("Hệ Thống Quản Lý Đào Tạo Trực Tuyến – Alpha Logic Center");
         setSize(1000, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -33,6 +33,25 @@ public class LoginUI extends JFrame {
         mainPanel.add(createRightPanel(), BorderLayout.CENTER);
 
         add(mainPanel);
+    }
+
+    // ==========================================
+    // HÀM HỖ TRỢ LOAD VÀ RESIZE ICON CHO NÚT BẤM
+    // ==========================================
+    private ImageIcon createScaledIcon(String pathOrUrl, int width, int height) {
+        try {
+            Image img;
+            if (pathOrUrl.startsWith("http")) { // Tải từ Link Web
+                img = javax.imageio.ImageIO.read(new java.net.URL(pathOrUrl));
+            } else { // Tải từ thư mục dự án (ví dụ: /icons/eye.png)
+                img = new ImageIcon(getClass().getResource(pathOrUrl)).getImage();
+            }
+            Image scaledImg = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+            return new ImageIcon(scaledImg);
+        } catch (Exception e) {
+            System.err.println("Không thể load icon từ: " + pathOrUrl);
+            return null; 
+        }
     }
 
     // ==========================================
@@ -79,7 +98,7 @@ public class LoginUI extends JFrame {
         lblIcon.setFont(new Font("Segoe UI", Font.PLAIN, 24));
         lblIcon.setForeground(Color.WHITE);
         
-        JLabel lblInfo = new JLabel("<html>Chào mừng đến với<br>Hệ thống EduFlex.</html>");
+        JLabel lblInfo = new JLabel("<html>Chào mừng đến với<br>Hệ thống Alpha Logic Center </html>");
         lblInfo.setFont(new Font("Segoe UI", Font.BOLD, 15));
         lblInfo.setForeground(Color.WHITE);
         
@@ -201,10 +220,18 @@ public class LoginUI extends JFrame {
         txtPass.setBorder(null); 
         txtPass.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 
-        JButton btnTogglePass = new JButton("👁"); 
-        btnTogglePass.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        btnTogglePass.setForeground(Color.GRAY);
-        btnTogglePass.setBorder(null);
+        // ===============================================
+        // KHỞI TẠO NÚT ẨN/HIỆN MẬT KHẨU VỚI ICON
+        // ===============================================
+        // ĐIỀN LINK ICON CỦA BẠN VÀO ĐÂY:
+        String eyeOpenUrl = "https://cdn-icons-png.flaticon.com/512/159/159604.png"; 
+        String eyeClosedUrl = "https://cdn-icons-png.flaticon.com/512/2767/2767146.png"; 
+        
+        ImageIcon iconEyeOpen = createScaledIcon(eyeOpenUrl, 20, 20);
+        ImageIcon iconEyeClosed = createScaledIcon(eyeClosedUrl, 20, 20);
+
+        JButton btnTogglePass = new JButton(iconEyeClosed); // Mặc định là nhắm mắt
+        btnTogglePass.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
         btnTogglePass.setBackground(Color.WHITE);
         btnTogglePass.setFocusPainted(false);
         btnTogglePass.setContentAreaFilled(false);
@@ -243,14 +270,16 @@ public class LoginUI extends JFrame {
         footerPanel.add(lblRegister);
         form.add(footerPanel);
 
-        // Events
+        // ===============================================
+        // EVENTS SỰ KIỆN CLICKS
+        // ===============================================
         btnTogglePass.addActionListener(e -> {
             if (txtPass.getEchoChar() == '•') {
                 txtPass.setEchoChar((char) 0);
-                btnTogglePass.setText("🙈");
+                btnTogglePass.setIcon(iconEyeOpen); // Chuyển sang Icon mở mắt
             } else {
                 txtPass.setEchoChar('•');
-                btnTogglePass.setText("👁");
+                btnTogglePass.setIcon(iconEyeClosed); // Chuyển sang Icon nhắm mắt
             }
         });
 
@@ -390,9 +419,6 @@ public class LoginUI extends JFrame {
     // ==========================================
     // GIAO DIỆN CHÍNH (WEB DASHBOARD UI)
     // ==========================================
-    // ==========================================
-    // GIAO DIỆN CHÍNH (WEB DASHBOARD UI)
-    // ==========================================
     public void onLoginSuccess() {
         String fullName = com.mycompany.myapp.utils.SessionStore.getFullName();
         List<String> roles = com.mycompany.myapp.utils.SessionStore.getUserRoles(); 
@@ -400,7 +426,7 @@ public class LoginUI extends JFrame {
         this.dispose(); 
 
         SwingUtilities.invokeLater(() -> {
-            JFrame mainFrame = new JFrame("EduFlex Dashboard - Hệ Thống Quản Lý");
+            JFrame mainFrame = new JFrame("Alpha Logic Center - Hệ Thống Quản Lý");
             mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             mainFrame.setSize(1350, 850);
             mainFrame.setLocationRelativeTo(null);
@@ -436,15 +462,15 @@ public class LoginUI extends JFrame {
             
             if (roles.contains("Nhan_Vien_Quan_Ly_He_Thong")) {
                 // QUYỀN QUẢN TRỊ HỆ THỐNG
-                contentPanel.add(new com.mycompany.myapp.view.screens.system.AccountManagerUI(), "ACCOUNT_MGR");
-                contentPanel.add(new com.mycompany.myapp.view.screens.system.SystemConfigUI(), "SYSTEM_CFG");
+                contentPanel.add(new com.mycompany.myapp.view.screens.QuanLyHeThong.AccountManagerUI(), "ACCOUNT_MGR");
+                contentPanel.add(new com.mycompany.myapp.view.screens.QuanLyHeThong.SystemConfigUI(), "SYSTEM_CFG");
                 
                 sidebar.add(createNavBtn("Quản lý tài khoản", "ACCOUNT_MGR", contentPanel, cardLayout, navButtons));
                 sidebar.add(createNavBtn("Cấu hình hệ thống", "SYSTEM_CFG", contentPanel, cardLayout, navButtons));
                 
             } else if (roles.contains("Giao_Vien")) {
                 // QUYỀN GIÁO VIÊN
-                contentPanel.add(new com.mycompany.myapp.view.screens.finance.DashboardPanel(), "DASHBOARD");
+                contentPanel.add(new com.mycompany.myapp.view.screens.teacher.DashboardPanel(), "DASHBOARD");
                 contentPanel.add(new com.mycompany.myapp.view.screens.teacher.SchedulePanel(), "SCHEDULE");
                 contentPanel.add(new com.mycompany.myapp.view.screens.teacher.StudentListPanel(), "STUDENT_LIST");
                 contentPanel.add(new com.mycompany.myapp.view.screens.teacher.AttendancePanel(), "ATTENDANCE");
@@ -462,29 +488,63 @@ public class LoginUI extends JFrame {
                 sidebar.add(createNavBtn("Báo cáo kết quả", "ACADEMIC_RESULT", contentPanel, cardLayout, navButtons));
                 sidebar.add(createNavBtn("Hồ sơ cá nhân", "PROFILE", contentPanel, cardLayout, navButtons));
                 
-            } else if (roles.contains("Nhan_Vien_Ke_Toan") || roles.contains("Nhan_Vien_Quan_Ly_Nghiep_Vu")) {
-                
-                // 1. Thêm trực tiếp các màn hình con vào contentPanel chính
-                contentPanel.add(new com.mycompany.myapp.view.screens.finance.PaymentPanel(), "FIN_PAYMENT");
-                contentPanel.add(new com.mycompany.myapp.view.screens.finance.ManageInvoicePanel(), "FIN_MANAGE");
-                contentPanel.add(new com.mycompany.myapp.view.screens.finance.LookupPanel(), "FIN_LOOKUP");
-                contentPanel.add(new com.mycompany.myapp.view.screens.finance.InvoiceIssuePanel(), "FIN_ISSUE");
-                contentPanel.add(new com.mycompany.myapp.view.screens.finance.PayrollPanel(), "FIN_PAYROLL");
+            } else if (roles.contains("Nhan_Vien_Quan_Ly_Nghiep_Vu")) {
+                // QUYỀN QUẢN LÝ NGHIỆP VỤ / GIÁO VỤ 
+                contentPanel.add(new com.mycompany.myapp.view.screens.GiaoVuUI.ManageSubjectPanel(), "GV_SUBJECT");
+                contentPanel.add(new com.mycompany.myapp.view.screens.GiaoVuUI.StudyReportPanel(), "GV_REPORT");
+                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.PaymentPanel(), "FIN_PAYMENT");
+                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.ManageInvoicePanel(), "FIN_MANAGE");
+                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.LookupPanel(), "FIN_LOOKUP");
+                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.InvoiceIssuePanel(), "FIN_ISSUE");
+                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.PayrollPanel(), "FIN_PAYROLL");
 
-                // 2. Tạo Label phân cách (Section) "HỌC PHÍ"
+                JLabel lblGiaoVu = new JLabel("HỌC VỤ & ĐÀO TẠO");
+                lblGiaoVu.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                lblGiaoVu.setForeground(Color.decode("#A5B4FC"));
+                lblGiaoVu.setBorder(new EmptyBorder(15, 25, 5, 0));
+                sidebar.add(lblGiaoVu);
+
+                sidebar.add(createNavBtn("Quản lý môn học", "GV_SUBJECT", contentPanel, cardLayout, navButtons));
+                sidebar.add(createNavBtn("Báo cáo học tập", "GV_REPORT", contentPanel, cardLayout, navButtons));
+
                 JLabel lblTuition = new JLabel("HỌC PHÍ");
                 lblTuition.setFont(new Font("Segoe UI", Font.BOLD, 11));
-                lblTuition.setForeground(Color.decode("#A5B4FC")); // Màu tím nhạt cho tiêu đề phụ
+                lblTuition.setForeground(Color.decode("#A5B4FC"));
                 lblTuition.setBorder(new EmptyBorder(15, 25, 5, 0));
                 sidebar.add(lblTuition);
 
-                // 3. Đưa các nút chức năng trực tiếp ra Sidebar chính
                 sidebar.add(createNavBtn("Ghi nhận thanh toán", "FIN_PAYMENT", contentPanel, cardLayout, navButtons));
                 sidebar.add(createNavBtn("Quản lý học phí", "FIN_MANAGE", contentPanel, cardLayout, navButtons));
                 sidebar.add(createNavBtn("Tra cứu học phí", "FIN_LOOKUP", contentPanel, cardLayout, navButtons));
                 sidebar.add(createNavBtn("Hóa đơn điện tử", "FIN_ISSUE", contentPanel, cardLayout, navButtons));
 
-                // 4. Tạo Label phân cách (Section) "NHÂN SỰ"
+                JLabel lblHR = new JLabel("NHÂN SỰ");
+                lblHR.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                lblHR.setForeground(Color.decode("#A5B4FC"));
+                lblHR.setBorder(new EmptyBorder(15, 25, 5, 0));
+                sidebar.add(lblHR);
+
+                sidebar.add(createNavBtn("Tính lương nhân viên", "FIN_PAYROLL", contentPanel, cardLayout, navButtons));
+
+            } else if (roles.contains("Nhan_Vien_Ke_Toan")) {
+                // QUYỀN KẾ TOÁN 
+                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.PaymentPanel(), "FIN_PAYMENT");
+                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.ManageInvoicePanel(), "FIN_MANAGE");
+                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.LookupPanel(), "FIN_LOOKUP");
+                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.InvoiceIssuePanel(), "FIN_ISSUE");
+                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.PayrollPanel(), "FIN_PAYROLL");
+
+                JLabel lblTuition = new JLabel("HỌC PHÍ");
+                lblTuition.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                lblTuition.setForeground(Color.decode("#A5B4FC"));
+                lblTuition.setBorder(new EmptyBorder(15, 25, 5, 0));
+                sidebar.add(lblTuition);
+
+                sidebar.add(createNavBtn("Ghi nhận thanh toán", "FIN_PAYMENT", contentPanel, cardLayout, navButtons));
+                sidebar.add(createNavBtn("Quản lý học phí", "FIN_MANAGE", contentPanel, cardLayout, navButtons));
+                sidebar.add(createNavBtn("Tra cứu học phí", "FIN_LOOKUP", contentPanel, cardLayout, navButtons));
+                sidebar.add(createNavBtn("Hóa đơn điện tử", "FIN_ISSUE", contentPanel, cardLayout, navButtons));
+
                 JLabel lblHR = new JLabel("NHÂN SỰ");
                 lblHR.setFont(new Font("Segoe UI", Font.BOLD, 11));
                 lblHR.setForeground(Color.decode("#A5B4FC")); 
@@ -494,15 +554,13 @@ public class LoginUI extends JFrame {
                 sidebar.add(createNavBtn("Tính lương nhân viên", "FIN_PAYROLL", contentPanel, cardLayout, navButtons));
             }
             
-            sidebar.add(Box.createVerticalGlue()); // Đẩy menu lên trên
+            sidebar.add(Box.createVerticalGlue());
 
-            // Lắp ráp các phần vào Frame chính
             mainFrame.add(topHeader, BorderLayout.NORTH);
             mainFrame.add(sidebar, BorderLayout.WEST);
             mainFrame.add(contentPanel, BorderLayout.CENTER);
             mainFrame.setVisible(true);
 
-            // Tự động Click vào Tab đầu tiên khi vừa login xong
             if (!navButtons.isEmpty()) {
                 navButtons.get(0).doClick();
             }
@@ -516,12 +574,11 @@ public class LoginUI extends JFrame {
         header.setPreferredSize(new Dimension(0, 70));
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.decode("#E2E8F0")));
 
-        JLabel lblLogo = new JLabel("  EDUFLEX DASHBOARD");
+        JLabel lblLogo = new JLabel("  ALPHA LOGIC CENTER");
         lblLogo.setFont(new Font("Segoe UI", Font.BOLD, 18));
         lblLogo.setForeground(Color.decode("#8B5CF6"));
         header.add(lblLogo, BorderLayout.WEST);
 
-        // Khu vực hiển thị tên người dùng
         JPanel userArea = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 20));
         userArea.setOpaque(false);
         userArea.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -531,29 +588,26 @@ public class LoginUI extends JFrame {
         lblUser.setForeground(Color.decode("#334155"));
         userArea.add(lblUser);
         
-        // Tạo Menu Đăng xuất (Dropdown)
         JPopupMenu dropMenu = new JPopupMenu();
         dropMenu.setBackground(Color.WHITE);
         dropMenu.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
 
         JMenuItem itemLogout = new JMenuItem("Đăng xuất khỏi hệ thống");
         itemLogout.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        itemLogout.setForeground(Color.decode("#E74C3C")); // Chữ màu đỏ
+        itemLogout.setForeground(Color.decode("#E74C3C")); 
         itemLogout.setMargin(new Insets(10, 15, 10, 15));
         itemLogout.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
-        // Sự kiện click Đăng xuất
         itemLogout.addActionListener(e -> {
-            int confirm = JOptionPane.showConfirmDialog(frame, "Xác nhận đăng xuất khỏi hệ thống?", "EduFlex", JOptionPane.YES_NO_OPTION);
+            int confirm = JOptionPane.showConfirmDialog(frame, "Xác nhận đăng xuất khỏi hệ thống?", "Alpha Logic Center", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
-                com.mycompany.myapp.utils.SessionStore.clearSession(); // Xóa phiên đăng nhập
-                frame.dispose(); // Đóng Dashboard
-                new LoginUI().setVisible(true); // Trở lại màn hình Login
+                com.mycompany.myapp.utils.SessionStore.clearSession(); 
+                frame.dispose(); 
+                new LoginUI().setVisible(true); 
             }
         });
         dropMenu.add(itemLogout);
 
-        // Bắt sự kiện click vào Tên để xổ Menu
         userArea.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) { dropMenu.show(userArea, 0, userArea.getHeight()); }
         });
@@ -562,19 +616,17 @@ public class LoginUI extends JFrame {
         return header;
     }
 
-    // --- TẠO NÚT MENU SIDEBAR (ĐÃ FIX LỖI GIAO DIỆN WINDOWS) ---
+    // --- TẠO NÚT MENU SIDEBAR ---
     private JButton createNavBtn(String text, String cardName, JPanel parent, CardLayout layout, java.util.List<JButton> navList) {
         
-        // Tùy chỉnh JButton để bỏ qua hoàn toàn cách vẽ nút mặc định của Windows
         JButton btn = new JButton(text) {
             @Override
             protected void paintComponent(Graphics g) {
-                // Tự vẽ màu nền cho nút dựa theo trạng thái (Hover/Active)
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setColor(getBackground());
                 g2.fillRect(0, 0, getWidth(), getHeight());
                 g2.dispose();
-                super.paintComponent(g); // Vẽ chữ lên trên nền
+                super.paintComponent(g); 
             }
         };
 
@@ -582,57 +634,51 @@ public class LoginUI extends JFrame {
         btn.setPreferredSize(new Dimension(270, 48));
         btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btn.setForeground(Color.WHITE);
-        btn.setBackground(Color.decode("#6E58D7")); // Màu nền mặc định
+        btn.setBackground(Color.decode("#6E58D7")); 
         
         btn.setHorizontalAlignment(SwingConstants.LEFT);
         
-        // 3 DÒNG CODE QUAN TRỌNG NHẤT ĐỂ FIX LỖI NHƯ TRONG ẢNH
-        btn.setContentAreaFilled(false); // Ngăn Windows tự tô nền (gây ra màu xanh nhạt/trắng)
-        btn.setFocusPainted(false);      // Xóa khung viền gạch đứt khi click
-        btn.setOpaque(false);            // Bắt buộc false để paintComponent phía trên hoạt động
+        btn.setContentAreaFilled(false); 
+        btn.setFocusPainted(false);      
+        btn.setOpaque(false);            
         
-        btn.setBorderPainted(true);      // Giữ lại viền để hiển thị đường kẻ đánh dấu
+        btn.setBorderPainted(true);      
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Thiết lập 2 trạng thái viền
         Border emptyBorder = BorderFactory.createEmptyBorder(0, 25, 0, 0);
         Border activeBorder = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 4, 0, 0, Color.WHITE), // Cột đánh dấu màu trắng dày 4px
-            BorderFactory.createEmptyBorder(0, 21, 0, 0)             // Bù padding để chữ không bị lệch
+            BorderFactory.createMatteBorder(0, 4, 0, 0, Color.WHITE), 
+            BorderFactory.createEmptyBorder(0, 21, 0, 0)             
         );
 
-        btn.setBorder(emptyBorder); // Mặc định không có viền trái
+        btn.setBorder(emptyBorder); 
         navList.add(btn); 
 
-        // Xử lý Sự kiện Click (Active State)
         btn.addActionListener(e -> {
             layout.show(parent, cardName);
             
-            // 1. Reset toàn bộ các nút khác
             for (JButton b : navList) {
                 b.setBackground(Color.decode("#6E58D7"));
                 b.setBorder(emptyBorder);
-                b.putClientProperty("isActive", false); // Gỡ cờ Active
+                b.putClientProperty("isActive", false); 
             }
             
-            // 2. Highlight nút hiện tại
-            btn.setBackground(Color.decode("#503CC8")); // Tối hơn để nhấn mạnh
+            btn.setBackground(Color.decode("#503CC8")); 
             btn.setBorder(activeBorder);
-            btn.putClientProperty("isActive", true);    // Cắm cờ Active
+            btn.putClientProperty("isActive", true);    
         });
         
-        // Xử lý Sự kiện Rê chuột (Hover State)
         btn.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent e) { 
                 Boolean isActive = (Boolean) btn.getClientProperty("isActive");
                 if (isActive == null || !isActive) {
-                    btn.setBackground(Color.decode("#7E6BE0")); // Tím sáng hơn khi Hover
+                    btn.setBackground(Color.decode("#7E6BE0")); 
                 }
             } 
             public void mouseExited(MouseEvent e) { 
                 Boolean isActive = (Boolean) btn.getClientProperty("isActive");
                 if (isActive == null || !isActive) {
-                    btn.setBackground(Color.decode("#6E58D7")); // Trả về màu cũ khi rời chuột
+                    btn.setBackground(Color.decode("#6E58D7")); 
                 }
             } 
         });
