@@ -1,4 +1,4 @@
-package com.mycompany.myapp.view.screens.finance;
+package com.mycompany.myapp.view.screens.ThanhToan;
 
 import com.mycompany.myapp.controller.FinanceController;
 import com.mycompany.myapp.model.Payroll;

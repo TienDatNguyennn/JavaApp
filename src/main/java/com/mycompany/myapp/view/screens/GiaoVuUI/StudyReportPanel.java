@@ -1,4 +1,4 @@
-package com.mycompany.myapp.view.screens; // NHỚ ĐỔI PACKAGE
+package com.mycompany.myapp.view.screens.GiaoVuUI; // NHỚ ĐỔI PACKAGE
 
 import com.mycompany.myapp.model.StudyReportDTO;
 import com.mycompany.myapp.repository.StudyReportDAO;

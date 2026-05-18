@@ -1,4 +1,4 @@
-package com.mycompany.myapp.view.screens.system;
+package com.mycompany.myapp.view.screens.QuanLyHeThong;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -63,7 +63,7 @@ public class SystemConfigUI extends JPanel {
         ));
         
         // Nút tìm kiếm bo góc
-        RoundedButton btnSearch = new RoundedButton("🔍 Tìm", "#F1F2F6", "#2D3436", 12);
+        RoundedButton btnSearch = new RoundedButton("Tìm", "#F1F2F6", "#2D3436", 12);
         searchPanel.add(txtSearch);
         searchPanel.add(Box.createHorizontalStrut(5));
         searchPanel.add(btnSearch);

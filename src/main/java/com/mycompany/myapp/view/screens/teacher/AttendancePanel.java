@@ -2,6 +2,7 @@ package com.mycompany.myapp.view.screens.teacher;
 
 import com.mycompany.myapp.model.StudentAttendanceDTO;
 import com.mycompany.myapp.service.AttendanceService;
+import com.mycompany.myapp.service.DynamicQRService; // THÊM IMPORT SERVICE QR
 import com.mycompany.myapp.utils.Result;
 import com.mycompany.myapp.view.components.RoundedPanel;
 import com.mycompany.myapp.view.components.UIKit;
@@ -28,6 +29,13 @@ public class AttendancePanel extends JPanel {
     private DefaultTableModel model;
     private AttendanceService service;
     
+    // --- COMPONENT CHO QR CODE ---
+    private JLabel lblQRCode;
+    private JButton btnStartQR;
+    private JButton btnStopQR;
+    private DynamicQRService qrService;
+    // -----------------------------
+
     private List<StudentAttendanceDTO> currentStudentList;
     private final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
 
@@ -39,7 +47,7 @@ public class AttendancePanel extends JPanel {
 
     private void initUI() {
         setLayout(new BorderLayout(0, 25));
-        setBackground(new Color(245, 245, 249)); // Màu nền nhạt giúp bảng nổi bật
+        setBackground(new Color(245, 245, 249)); 
         setBorder(new EmptyBorder(25, 30, 25, 30));
 
         // ================= HEADER & BỘ LỌC =================
@@ -51,12 +59,10 @@ public class AttendancePanel extends JPanel {
         lblTitle.setForeground(UIKit.TEXT_DARK);
         topPanel.add(lblTitle, BorderLayout.NORTH);
 
-        // Filter Bar với style hiện đại hơn
         JPanel filterBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 10));
         filterBar.setBackground(Color.WHITE);
         filterBar.setBorder(BorderFactory.createLineBorder(new Color(230, 230, 235), 1));
 
-        // Hàm helper để tạo label nhỏ phía trên input
         cbxClasses = new JComboBox<>();
         cbxClasses.setPreferredSize(new Dimension(200, 38));
         cbxClasses.addActionListener(e -> loadSchedulesForClass());
@@ -72,16 +78,7 @@ public class AttendancePanel extends JPanel {
             BorderFactory.createEmptyBorder(0, 8, 0, 5)
         ));
 
-        // FIX LỖI NÚT TÀNG HÌNH: Tải danh sách
-        JButton btnLoad = new JButton("Tải danh sách");
-        btnLoad.setPreferredSize(new Dimension(140, 38));
-        btnLoad.setBackground(new Color(99, 102, 241)); // Tím Indigo
-        btnLoad.setForeground(Color.WHITE);
-        btnLoad.setFocusPainted(false);
-        btnLoad.setOpaque(true);
-        btnLoad.setBorderPainted(false);
-        btnLoad.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnLoad.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        JButton btnLoad = createStyledButton("Tải danh sách", new Color(99, 102, 241));
         btnLoad.addActionListener(e -> loadAttendanceData());
 
         filterBar.add(createLabel("Lớp:"));
@@ -95,7 +92,45 @@ public class AttendancePanel extends JPanel {
         topPanel.add(filterBar, BorderLayout.CENTER);
         add(topPanel, BorderLayout.NORTH);
 
-        // ================= CENTER: BẢNG DỮ LIỆU =================
+        // ================= CENTER: CHIA LƯỚI (QR BÊN TRÁI, TABLE BÊN PHẢI) =================
+        JPanel mainContentPanel = new JPanel(new BorderLayout(20, 0)); // Gap 20px
+        mainContentPanel.setOpaque(false);
+
+        // --- 1. CỘT TRÁI: KHU VỰC QR ĐỘNG ---
+        RoundedPanel qrContainer = new RoundedPanel(15);
+        qrContainer.setLayout(new BorderLayout(0, 15));
+        qrContainer.setBackground(Color.WHITE);
+        qrContainer.setBorder(new EmptyBorder(20, 20, 20, 20));
+        qrContainer.setPreferredSize(new Dimension(350, 0));
+
+        JLabel lblQrTitle = new JLabel("Mã QR Điểm Danh", SwingConstants.CENTER);
+        lblQrTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblQrTitle.setForeground(UIKit.TEXT_DARK);
+        qrContainer.add(lblQrTitle, BorderLayout.NORTH);
+
+        lblQRCode = new JLabel("Chọn ca học để phát mã", SwingConstants.CENTER);
+        lblQRCode.setFont(new Font("Segoe UI", Font.ITALIC, 14));
+        lblQRCode.setForeground(Color.GRAY);
+        lblQRCode.setBorder(BorderFactory.createDashedBorder(Color.LIGHT_GRAY, 3, 2));
+        qrContainer.add(lblQRCode, BorderLayout.CENTER);
+
+        JPanel qrActionPanel = new JPanel(new GridLayout(1, 2, 10, 0));
+        qrActionPanel.setOpaque(false);
+        
+        btnStartQR = createStyledButton("Phát Mã QR", new Color(16, 185, 129)); // Xanh lá
+        btnStopQR = createStyledButton("Dừng", new Color(239, 68, 68)); // Đỏ
+        btnStopQR.setEnabled(false);
+
+        btnStartQR.addActionListener(e -> startQRSession());
+        btnStopQR.addActionListener(e -> stopQRSession());
+
+        qrActionPanel.add(btnStartQR);
+        qrActionPanel.add(btnStopQR);
+        qrContainer.add(qrActionPanel, BorderLayout.SOUTH);
+
+        mainContentPanel.add(qrContainer, BorderLayout.WEST);
+
+        // --- 2. CỘT PHẢI: BẢNG DỮ LIỆU ---
         RoundedPanel tableContainer = new RoundedPanel(15);
         tableContainer.setLayout(new BorderLayout());
         tableContainer.setBackground(Color.WHITE);
@@ -111,33 +146,41 @@ public class AttendancePanel extends JPanel {
         table.setShowVerticalLines(true);
         table.setShowHorizontalLines(true);
         table.setGridColor(new Color(230, 230, 240));
-        table.setRowHeight(40); // Tăng chiều cao dòng cho dễ bấm ComboBox
+        table.setRowHeight(40);
 
-        // Nhúng ComboBox vào cột "Trạng Thái"
         TableColumn statusColumn = table.getColumnModel().getColumn(2);
         JComboBox<String> comboStatus = new JComboBox<>(new String[]{"Có mặt", "Vắng mặt"});
         statusColumn.setCellEditor(new DefaultCellEditor(comboStatus));
 
         tableContainer.add(new ModernScrollPane(table), BorderLayout.CENTER);
-        add(tableContainer, BorderLayout.CENTER);
+        mainContentPanel.add(tableContainer, BorderLayout.CENTER);
 
-        // ================= BOTTOM: NÚT LƯU =================
+        add(mainContentPanel, BorderLayout.CENTER);
+
+        // ================= BOTTOM: NÚT LƯU THỦ CÔNG =================
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         bottomPanel.setOpaque(false);
         
-        // FIX LỖI NÚT TÀNG HÌNH: Lưu điểm danh
-        JButton btnSave = new JButton("Lưu Điểm Danh");
-        btnSave.setPreferredSize(new Dimension(180, 45));
-        btnSave.setBackground(new Color(34, 197, 94)); // Xanh lá đậm
-        btnSave.setForeground(Color.WHITE);
-        btnSave.setOpaque(true);
-        btnSave.setBorderPainted(false);
-        btnSave.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        btnSave.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        JButton btnSave = createStyledButton("Lưu Điểm Danh Thủ Công", new Color(59, 130, 246)); // Xanh dương
+        btnSave.setPreferredSize(new Dimension(220, 45));
         btnSave.addActionListener((ActionEvent e) -> saveAttendance());
         
         bottomPanel.add(btnSave);
         add(bottomPanel, BorderLayout.SOUTH);
+    }
+
+    // Hàm Helper tạo nút bấm để code gọn hơn
+    private JButton createStyledButton(String text, Color bgColor) {
+        JButton btn = new JButton(text);
+        btn.setPreferredSize(new Dimension(140, 38));
+        btn.setBackground(bgColor);
+        btn.setForeground(Color.WHITE);
+        btn.setFocusPainted(false);
+        btn.setOpaque(true);
+        btn.setBorderPainted(false);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return btn;
     }
 
     private JLabel createLabel(String text) {
@@ -147,7 +190,35 @@ public class AttendancePanel extends JPanel {
         return l;
     }
 
-    // --- Các hàm Logic giữ nguyên để đảm bảo Backend chạy đúng ---
+    // ================= LOGIC QR ĐỘNG =================
+    private void startQRSession() {
+        ComboItem sch = (ComboItem) cbxSchedules.getSelectedItem();
+        if (sch == null || sch.getId() == -1) {
+            JOptionPane.showMessageDialog(this, "Vui lòng tải danh sách học viên trước khi phát mã QR!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Khởi tạo và chạy Service sinh QR
+        qrService = new DynamicQRService(lblQRCode, sch.getId());
+        qrService.startSession();
+
+        btnStartQR.setEnabled(false);
+        btnStopQR.setEnabled(true);
+        cbxClasses.setEnabled(false); // Khóa bộ lọc trong lúc đang quét
+        cbxSchedules.setEnabled(false);
+    }
+
+    private void stopQRSession() {
+        if (qrService != null) {
+            qrService.stopSession();
+        }
+        btnStartQR.setEnabled(true);
+        btnStopQR.setEnabled(false);
+        cbxClasses.setEnabled(true);
+        cbxSchedules.setEnabled(true);
+    }
+
+    // ================= LOGIC DỮ LIỆU CŨ =================
     private void loadClasses() {
         cbxClasses.removeAllItems();
         Result<List<Map<String, Object>>> res = service.getTeacherClasses();
@@ -198,6 +269,11 @@ public class AttendancePanel extends JPanel {
                 String statusUI = "PRESENT".equals(dto.getStatus()) ? "Có mặt" : "Vắng mặt";
                 model.addRow(new Object[]{ "HV" + String.format("%04d", dto.getStudentId()), dto.getFullName(), statusUI, dto.getNote() != null ? dto.getNote() : "" });
             }
+            
+            // Nếu có kết quả, vô hiệu hóa mã QR cũ nếu đang chạy để làm mới
+            stopQRSession();
+            lblQRCode.setText("Bấm 'Phát Mã QR' để bắt đầu");
+            lblQRCode.setIcon(null);
         }
     }
 
