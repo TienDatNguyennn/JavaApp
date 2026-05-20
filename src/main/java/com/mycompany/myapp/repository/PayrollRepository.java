@@ -52,7 +52,39 @@ public class PayrollRepository {
     }
 
     // ── 2. INSERT ─────────────────────────────────────────────────
+   public Payroll findExistRecord(int userId, String payPeriod) {
+        String sql = "SELECT payroll_id FROM PAYROLL WHERE user_id = ? AND pay_period = ? AND is_deleted = 0";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setString(2, payPeriod);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Payroll p = new Payroll();
+                    p.setPayrollId(rs.getInt("payroll_id"));
+                    return p;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("[PayrollRepo] findExistRecord error: " + e.getMessage());
+        }
+        return null;
+    }
+
+    // ── SỬA LẠI HÀM SAVE THÀNH UPSERT (TỰ ĐỘNG INSERT HOẶC UPDATE) ──
     public boolean save(Payroll p) {
+        // 1. Kiểm tra xem nhân viên này trong kỳ này đã có bảng lương chưa
+        Payroll existPayroll = findExistRecord(p.getUserId(), p.getPayPeriod());
+        
+        if (existPayroll != null) {
+            // 2. Nếu ĐÃ CÓ: Gán payroll_id tìm được vào đối tượng hiện tại và tiến hành UPDATE
+            p.setPayrollId(existPayroll.getPayrollId());
+            System.out.println("[PayrollRepo] Phát hiện bản ghi đã tồn tại (ID: " + p.getPayrollId() + "). Chuyển hướng sang UPDATE.");
+            return update(p); 
+        }
+        
+        // 3. Nếu CHƯA CÓ: Tiến hành INSERT mới như bình thường
+        System.out.println("[PayrollRepo] Bản ghi chưa tồn tại trong kỳ này. Tiến hành INSERT.");
         String sql = "INSERT INTO PAYROLL (user_id, staff_type, pay_period, total_teaching_fee, " +
                      "basic_salary, bonus_amount, total_net, is_deleted) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, 0)";
@@ -71,7 +103,7 @@ public class PayrollRepository {
             return false;
         }
     }
-
+    
     // ── 3. UPDATE ─────────────────────────────────────────────────
     public boolean update(Payroll p) {
         String sql = "UPDATE PAYROLL SET total_teaching_fee = ?, basic_salary = ?, " +
@@ -164,4 +196,5 @@ public class PayrollRepository {
         p.setTotalNet(rs.getDouble("total_net"));
         return p;
     }
+    
 }

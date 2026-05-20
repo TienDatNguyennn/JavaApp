@@ -36,13 +36,14 @@ public class PaymentPanel extends JPanel {
     // Form fields
     private JTextField   txtSearch, txtAmount, txtTxnId;
     private JComboBox<String> cmbMethod;
-    private JSpinner     spnDate;
+    private JSpinner      spnDate;
 
     // State
     private Invoice      selectedInvoice;
 
     // UI labels
     private JLabel lblStudentInfo;
+    private JLabel lblQRCode; 
     private JPanel pnlStudentCard;
 
     // Table lịch sử
@@ -111,14 +112,14 @@ public class PaymentPanel extends JPanel {
         card.add(cardTitle);
         card.add(Box.createVerticalStrut(14));
 
-        // Row tìm kiếm học viên
-        card.add(label("Tìm học viên (Tên / Mã HV)"));
+        // Row tìm kiếm học viên (Đã đổi text nhãn thành chỉ tìm theo Mã)
+        card.add(label("Tìm học viên theo Mã học viên"));
         card.add(Box.createVerticalStrut(4));
         JPanel searchRow = new JPanel(new BorderLayout(6, 0));
         searchRow.setOpaque(false);
         searchRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
         searchRow.setAlignmentX(LEFT_ALIGNMENT);
-        txtSearch = styledField("Nhập tên hoặc mã học viên...");
+        txtSearch = styledField("Nhập mã số học viên...");
         CustomButton btnSearch = new CustomButton("Tìm");
         btnSearch.setColors(PRIMARY, PRIMARY.darker());
         btnSearch.setFont(new Font("Segoe UI", Font.BOLD, 13));
@@ -129,18 +130,25 @@ public class PaymentPanel extends JPanel {
         card.add(searchRow);
         card.add(Box.createVerticalStrut(10));
 
-        // Card thông tin học viên (ẩn mặc định)
-        pnlStudentCard = new JPanel(new BorderLayout());
+        // Card thông tin học viên kèm ảnh QR ngân hàng
+        pnlStudentCard = new JPanel(new BorderLayout(12, 0));
         pnlStudentCard.setBackground(new Color(240, 237, 255));
         pnlStudentCard.setBorder(new CompoundBorder(
             new LineBorder(new Color(180, 170, 240), 1, true),
             new EmptyBorder(10, 12, 10, 12)));
-        pnlStudentCard.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
+        pnlStudentCard.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
         pnlStudentCard.setAlignmentX(LEFT_ALIGNMENT);
+
         lblStudentInfo = new JLabel("Chưa chọn học viên");
         lblStudentInfo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lblStudentInfo.setForeground(PRIMARY.darker());
         pnlStudentCard.add(lblStudentInfo, BorderLayout.CENTER);
+
+        lblQRCode = new JLabel();
+        lblQRCode.setHorizontalAlignment(JLabel.CENTER);
+        lblQRCode.setPreferredSize(new Dimension(90, 90));
+        pnlStudentCard.add(lblQRCode, BorderLayout.EAST);
+
         pnlStudentCard.setVisible(false);
         card.add(pnlStudentCard);
         card.add(Box.createVerticalStrut(10));
@@ -174,7 +182,7 @@ public class PaymentPanel extends JPanel {
         card.add(Box.createVerticalStrut(16));
 
         // Nút xác nhận
-        CustomButton btnConfirm = new CustomButton("✔ Xác nhận thanh toán");
+        CustomButton btnConfirm = new CustomButton("Xác nhận thanh toán");
         btnConfirm.setColors(SUCCESS, SUCCESS.darker());
         btnConfirm.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btnConfirm.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
@@ -205,7 +213,6 @@ public class PaymentPanel extends JPanel {
         };
         tblRecent = buildTable(tableModel);
 
-        // Renderer màu cột Trạng thái
         tblRecent.getColumnModel().getColumn(3).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object v,
@@ -230,22 +237,52 @@ public class PaymentPanel extends JPanel {
     // ═══════════════════════════════════════════════════════════════
     private void searchStudent() {
         String kw = txtSearch.getText().trim();
-        if (kw.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập tên hoặc mã học viên.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+        
+        // 1. Kiểm tra rỗng
+        if (kw.isEmpty() || kw.equals("Nhập mã số học viên...")) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập Mã học viên cần tìm.", "Thông báo", JOptionPane.WARNING_MESSAGE);
             return;
         }
+
+        // 2. Kiểm tra tính hợp lệ (Mã học viên bắt buộc phải là số chữ số)
+        if (!kw.matches("\\d+")) {
+            JOptionPane.showMessageDialog(this, "Mã học viên không hợp lệ! Vui lòng chỉ nhập số.", "Lỗi định dạng", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // 3. Tiến hành tìm kiếm thông qua Controller (Truyền chính xác mã số)
         List<Invoice> results = ctrl.searchInvoices(kw, null);
         if (results.isEmpty()) {
             pnlStudentCard.setVisible(false);
             selectedInvoice = null;
-            JOptionPane.showMessageDialog(this, "Không tìm thấy học viên \"" + kw + "\".", "Không tìm thấy", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Không tìm thấy hóa đơn nào của học viên có mã \"" + kw + "\".", "Không tìm thấy", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
+        
         selectedInvoice = results.get(0);
         double debt = selectedInvoice.getDebtAmount();
-        lblStudentInfo.setText("<html><b>" + selectedInvoice.getStudentName() + "</b>"
-            + "  &nbsp;|&nbsp; Học phí: " + nf.format(selectedInvoice.getFinalAmount()) + "đ"
-            + "  &nbsp;|&nbsp; Còn nợ: <font color='#dc3545'><b>" + nf.format(debt) + "đ</b></font></html>");
+        
+        // Cập nhật text thông tin lên Card hiển thị
+        lblStudentInfo.setText("<html><b>" + selectedInvoice.getStudentName() + " (Mã: " + selectedInvoice.getStudentId() + ")</b>"
+            + "<br>Học phí: " + nf.format(selectedInvoice.getFinalAmount()) + "đ"
+            + "<br>Còn nợ: <font color='#dc3545'><b>" + nf.format(debt) + "đ</b></font></html>");
+        
+        // Đọc và vẽ ảnh QR tài khoản
+        try {
+            java.net.URL imgURL = getClass().getResource("/qrbank.jpg");
+            if (imgURL != null) {
+                ImageIcon originalIcon = new ImageIcon(imgURL);
+                Image scaledImg = originalIcon.getImage().getScaledInstance(90, 90, Image.SCALE_SMOOTH);
+                lblQRCode.setIcon(new ImageIcon(scaledImg));
+            } else {
+                System.err.println("Không tìm thấy file qrbank.png trong folder resources!");
+                lblQRCode.setIcon(null);
+            }
+        } catch (Exception ex) {
+            System.err.println("Lỗi hiển thị hình ảnh QR: " + ex.getMessage());
+            lblQRCode.setIcon(null);
+        }
+
         pnlStudentCard.setVisible(true);
         revalidate(); repaint();
     }

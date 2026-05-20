@@ -57,8 +57,8 @@ public class InvoiceIssuePanel extends JPanel {
 
         JTabbedPane tabs = new JTabbedPane();
         tabs.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tabs.addTab("  📤  Phát hành hóa đơn  ", buildIssueTab());
-        tabs.addTab("  ✏️  Cập nhật hóa đơn  ",  buildAdjustTab());
+        tabs.addTab(" Phát hành hóa đơn  ", buildIssueTab());
+        tabs.addTab(" Cập nhật hóa đơn  ",  buildAdjustTab());
         add(tabs, BorderLayout.CENTER);
 
         loadPaidInvoices();
@@ -177,7 +177,7 @@ public class InvoiceIssuePanel extends JPanel {
         addGap(card, 14);
 
         // Nút phát hành
-        CustomButton btnIssue = new CustomButton("📤  Phát hành hóa đơn");
+        CustomButton btnIssue = new CustomButton("Phát hành hóa đơn");
         btnIssue.setColors(PRIMARY, PRIMARY.darker());
         btnIssue.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btnIssue.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
@@ -306,7 +306,7 @@ public class InvoiceIssuePanel extends JPanel {
         addGap(card, 14);
 
         // Nút gửi điều chỉnh
-        CustomButton btnAdj = new CustomButton("✏️  Gửi yêu cầu điều chỉnh");
+        CustomButton btnAdj = new CustomButton("Gửi yêu cầu điều chỉnh");
         btnAdj.setColors(new Color(253, 126, 20), new Color(210, 100, 10));
         btnAdj.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btnAdj.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));

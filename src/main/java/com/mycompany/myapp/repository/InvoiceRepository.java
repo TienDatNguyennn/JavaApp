@@ -44,8 +44,13 @@ public class InvoiceRepository {
         return null;
     }
 
-    public List<Invoice> findByFilter(String keyword, String status) {
+public List<Invoice> findByFilter(String keyword, String status) {
         List<Invoice> list = new ArrayList<>();
+        
+        // Thêm logic ORDER BY: 
+        // 1. Nếu mã học viên trùng khớp chính xác (i.student_id = số tìm kiếm) -> Ưu tiên số 1
+        // 2. Tiếp tục sắp xếp theo trạng thái (UNPAID -> PARTIAL -> Khác) -> Ưu tiên số 2
+        // 3. Cuối cùng mới sắp xếp theo ngày tạo giảm dần -> Ưu tiên số 3
         String sql =
             "SELECT i.invoice_id, i.student_id, s.full_name, i.staff_id, " +
             "       i.total_amount, i.discount_amt, i.final_amount, " +
@@ -56,38 +61,56 @@ public class InvoiceRepository {
             "WHERE  i.is_deleted = 0 " +
             "  AND  (? IS NULL OR UPPER(s.full_name) LIKE UPPER(?) OR i.student_id = ?) " +
             "  AND  (? IS NULL OR i.status = ?) " +
-            "ORDER BY i.created_at DESC";
+            "ORDER BY " +
+            "  CASE WHEN i.student_id = ? THEN 1 ELSE 2 END, " + // <-- ƯU TIÊN ID CHÍNH XÁC LÊN ĐẦU
+            "  CASE WHEN i.status = 'UNPAID' THEN 1 WHEN i.status = 'PARTIAL' THEN 2 ELSE 3 END, " +
+            "  s.full_name ASC, " +                             
+            "  i.created_at DESC";                               
 
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             
-            if (keyword == null || keyword.trim().isEmpty()) {
-                ps.setNull(1, Types.VARCHAR); ps.setNull(2, Types.VARCHAR); ps.setNull(3, Types.INTEGER);
+            int searchId = -1; // Biến tạm lưu trữ ID nếu keyword là số
+            
+            // 1. Thiết lập các tham số bộ lọc từ khóa (Tìm cả Tên và ID)
+            if (keyword == null || keyword.trim().isEmpty() || keyword.equals("Nhập mã số học viên...")) {
+                ps.setNull(1, Types.VARCHAR); 
+                ps.setNull(2, Types.VARCHAR); 
+                ps.setNull(3, Types.INTEGER);
             } else {
                 String kv = keyword.trim();
-                ps.setString(1, "X"); ps.setString(2, "%" + kv + "%");
+                ps.setString(1, "X"); 
+                ps.setString(2, "%" + kv + "%");
                 try {
-                    ps.setInt(3, Integer.parseInt(kv));
+                    searchId = Integer.parseInt(kv);
+                    ps.setInt(3, searchId);
                 } catch (NumberFormatException e) {
                     ps.setInt(3, -1); 
                 }
             }
 
+            // 2. Thiết lập tham số bộ lọc Trạng thái hóa đơn
             if (status == null || status.isEmpty() || status.contains("Tất cả")) {
-                ps.setNull(4, Types.VARCHAR); ps.setNull(5, Types.VARCHAR);
+                ps.setNull(4, Types.VARCHAR); 
+                ps.setNull(5, Types.VARCHAR);
             } else {
-                ps.setString(4, "X"); ps.setString(5, status);
+                ps.setString(4, "X"); 
+                ps.setString(5, status);
             }
+            
+            // 3. Thiết lập tham số cho mệnh đề ORDER BY (Tham số thứ 6)
+            // Truyền ID tìm được vào đây để Oracle đối chiếu và đưa bản ghi đó lên đầu
+            ps.setInt(6, searchId);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) list.add(mapRow(rs));
             }
         } catch (SQLException e) {
+            System.err.println("[InvoiceRepo] findByFilter error: " + e.getMessage());
             e.printStackTrace();
         }
         return list;
     }
-
     public Invoice findById(int id) {
         String sql =
             "SELECT i.invoice_id, i.student_id, s.full_name, i.staff_id, " +

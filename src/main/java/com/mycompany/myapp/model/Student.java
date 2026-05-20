@@ -1,15 +1,6 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.mycompany.myapp.model;
 
-/**
- *
- * @author Tien Dat
- */
 import java.sql.Date;
-
 
 public class Student {
     private int studentId;
@@ -20,7 +11,10 @@ public class Student {
     private String parentName;
     private String parentPhone;
     private String address;
-    private int managedBy;
+    
+    // Đã chuyển từ int sang Integer để hỗ trợ giá trị null từ Database
+    private Integer managedBy; 
+    
     private Date createdAt;
     private Date updatedAt;
     private boolean isDeleted;
@@ -28,7 +22,7 @@ public class Student {
     public Student() {
     }
 
-    public Student(int studentId, String fullName, Date dob, String gender, String phone, String parentName, String parentPhone, String address, int managedBy, Date createdAt, Date updatedAt, boolean isDeleted) {
+    public Student(int studentId, String fullName, Date dob, String gender, String phone, String parentName, String parentPhone, String address, Integer managedBy, Date createdAt, Date updatedAt, boolean isDeleted) {
         this.studentId = studentId;
         this.fullName = fullName;
         this.dob = dob;
@@ -67,8 +61,8 @@ public class Student {
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
 
-    public int getManagedBy() { return managedBy; }
-    public void setManagedBy(int managedBy) { this.managedBy = managedBy; }
+    public Integer getManagedBy() { return managedBy; }
+    public void setManagedBy(Integer managedBy) { this.managedBy = managedBy; }
 
     public Date getCreatedAt() { return createdAt; }
     public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
@@ -77,23 +71,5 @@ public class Student {
     public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
 
     public boolean isDeleted() { return isDeleted; }
-    public void setDeleted(boolean deleted) { isDeleted = deleted; }
-
-    @Override
-    public String toString() {
-        return "Student{" +
-                "studentId=" + studentId +
-                ", fullName='" + fullName + '\'' +
-                ", dob=" + dob +
-                ", gender='" + gender + '\'' +
-                ", phone='" + phone + '\'' +
-                ", parentName='" + parentName + '\'' +
-                ", parentPhone='" + parentPhone + '\'' +
-                ", address='" + address + '\'' +
-                ", managedBy=" + managedBy +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
-                ", isDeleted=" + isDeleted +
-                '}';
-    }
+    public void setDeleted(boolean deleted) { this.isDeleted = deleted; }
 }
