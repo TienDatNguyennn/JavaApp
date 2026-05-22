@@ -518,7 +518,8 @@ public class GradeEntryPanel extends JPanel {
         }
 
         for (int i = 0; i < table.getRowCount(); i++) {
-            String scoreStr = table.getValueAt(i, 2).toString();
+            Object scoreVal = table.getValueAt(i, 2);
+            String scoreStr = (scoreVal == null) ? "" : scoreVal.toString().trim();
             CourseResultDTO dto = currentGrades.get(i);
 
             if (scoreStr.isEmpty()) {

@@ -7,6 +7,7 @@ public class Invoice {
     private int studentId;
     private String studentName;
     private int staffId; // Thêm lại trường này
+    private int promoId;
     private double totalAmount;
     private double discountAmt;
     private double finalAmount;
@@ -27,6 +28,8 @@ public class Invoice {
     public void setStudentName(String studentName) { this.studentName = studentName; }
     public int getStaffId() { return staffId; }
     public void setStaffId(int staffId) { this.staffId = staffId; }
+    public int getPromoId() { return promoId; }
+    public void setPromoId(int promoId) { this.promoId = promoId; }
     public double getTotalAmount() { return totalAmount; }
     public void setTotalAmount(double totalAmount) { this.totalAmount = totalAmount; }
     public double getDiscountAmt() { return discountAmt; }

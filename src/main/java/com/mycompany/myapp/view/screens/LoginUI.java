@@ -218,24 +218,11 @@ public class LoginUI extends JFrame {
         socialRow.setMaximumSize(new Dimension(470, 42));
         socialRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        SocialLoginButton btnGoogle = new SocialLoginButton("G", "Đăng nhập bằng Google",
-                Color.WHITE, Color.decode("#334155"), Color.decode("#D1D5DB"));
-        btnGoogle.setIconColor(Color.decode("#4285F4"));
-        btnGoogle.setCompactMode(true);
+    
 
-        SocialLoginButton btnFacebook = new SocialLoginButton("f", "Đăng nhập bằng Facebook",
-                Color.WHITE, Color.decode("#334155"), Color.decode("#D1D5DB"));
-        btnFacebook.setIconColor(Color.WHITE);
-        btnFacebook.setIconBackground(Color.decode("#1877F2"));
-        btnFacebook.setCompactMode(true);
+        
 
-        socialRow.add(btnGoogle);
-        socialRow.add(btnFacebook);
-
-        form.add(socialRow);
-        form.add(Box.createRigidArea(new Dimension(0, 24)));
-        form.add(createDivider("HOẶC"));
-        form.add(Box.createRigidArea(new Dimension(0, 18)));
+    
 
         form.add(createInputLabel("Tài khoản"));
         PlaceholderTextField txtEmail = new PlaceholderTextField("");
@@ -478,6 +465,9 @@ public class LoginUI extends JFrame {
                 contentPanel.add(new com.mycompany.myapp.view.screens.teacher.AttendanceAnalyticsPanel(), "GV_ATTENDANCE");
                 contentPanel.add(new com.mycompany.myapp.view.screens.GiaoVuUI.ManageSubjectPanel(), "GV_SUBJECT");
                 contentPanel.add(new com.mycompany.myapp.view.screens.GiaoVuUI.StudyReportPanel(), "GV_REPORT");
+                contentPanel.add(new com.mycompany.myapp.view.screens.GiaoVuUI.ClassManagementPanel(), "GV_CLASS_MGR");
+                contentPanel.add(new com.mycompany.myapp.view.screens.GiaoVuUI.ClassEnrollmentPanel(), "GV_ENROLL");
+                contentPanel.add(new com.mycompany.myapp.view.screens.GiaoVuUI.ClassSchedulePanel(), "GV_SCHEDULE");
 
                 contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.PaymentPanel(), "FIN_PAYMENT");
                 contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.ManageInvoicePanel(), "FIN_MANAGE");
@@ -490,6 +480,9 @@ public class LoginUI extends JFrame {
                 sidebarContent.add(createNavBtn("Phân công giáo viên", "GV_ASSIGN", contentPanel, cardLayout, navButtons));
                 sidebarContent.add(createNavBtn("Tình trạng điểm danh", "GV_ATTENDANCE", contentPanel, cardLayout, navButtons));
                 sidebarContent.add(createNavBtn("Quản lý môn học", "GV_SUBJECT", contentPanel, cardLayout, navButtons));
+                sidebarContent.add(createNavBtn("Quản lý lớp học", "GV_CLASS_MGR", contentPanel, cardLayout, navButtons));
+                sidebarContent.add(createNavBtn("Xếp lớp học viên", "GV_ENROLL", contentPanel, cardLayout, navButtons));
+                sidebarContent.add(createNavBtn("Sắp lịch học", "GV_SCHEDULE", contentPanel, cardLayout, navButtons));
                 sidebarContent.add(createNavBtn("Báo cáo học tập", "GV_REPORT", contentPanel, cardLayout, navButtons));
 
                 sidebarContent.add(createSidebarTitle("HỌC PHÍ", 16, 22, 6));

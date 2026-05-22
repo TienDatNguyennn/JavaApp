@@ -38,16 +38,14 @@ public class GradeService {
 
     // Lưu điểm hàng loạt an toàn với Transaction
     public Result<Void> saveGrades(int classId, List<CourseResultDTO> grades) {
+        // Dùng getNewConnection() để có connection riêng — tránh đóng/thay đổi shared singleton
         Connection conn = null;
         try {
-            conn = DBConnection.getConnection();
-            conn.setAutoCommit(false); // BẮT ĐẦU TRANSACTION
+            conn = DBConnection.getNewConnection(); // autoCommit=false, SERIALIZABLE
 
             for (CourseResultDTO dto : grades) {
-                // Nếu giáo viên chưa nhập điểm (null) thì bỏ qua học sinh đó
                 if (dto.getFinalScore() == null) continue;
 
-                // Tự động tính toán lại Rank một lần nữa ở Backend cho chắc chắn
                 String calculatedRank = calculateRank(dto.getFinalScore());
 
                 if (dto.getResultId() > 0) {
@@ -57,15 +55,15 @@ public class GradeService {
                 }
             }
 
-            conn.commit(); // HOÀN TẤT TRANSACTION
+            conn.commit();
             return Result.success(null, "Lưu bảng điểm thành công!");
 
         } catch (SQLException e) {
             if (conn != null) try { conn.rollback(); } catch (SQLException ex) {}
             e.printStackTrace();
-            return Result.failure("Lỗi hệ thống khi lưu bảng điểm.");
+            return Result.failure("Lỗi hệ thống khi lưu bảng điểm: " + e.getMessage());
         } finally {
-            if (conn != null) try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ex) {}
+            if (conn != null) try { conn.close(); } catch (SQLException ex) {}
         }
     }
 

@@ -15,12 +15,9 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.List;
-import java.util.LinkedHashSet;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 public class StudentManagementPanel extends JPanel {
@@ -45,7 +42,7 @@ public class StudentManagementPanel extends JPanel {
     private TableRowSorter<DefaultTableModel> rowSorter;
 
     private JTextField txtId, txtName, txtDob, txtPhone, txtParent, txtParentPhone, txtSearch;
-    private JComboBox<String> cmbGender, cmbClassFilter;
+    private JComboBox<String> cmbGender;
     private JLabel lblTotalStudents, lblShowingStudents, lblClassInsight, lblFormMode, lblStatus, lblTableTitle, lblTableSubtitle, lblFilterBadge;
     private ActionButton btnSave, btnDelete, btnNew;
 
@@ -190,7 +187,7 @@ public class StudentManagementPanel extends JPanel {
 
         card.add(buildTableToolbar(), BorderLayout.NORTH);
 
-        tableModel = new DefaultTableModel(new String[]{"ID", "Họ tên", "Lớp", "Ngày sinh", "GT", "SĐT", "Phụ huynh", "SĐT PH"}, 0) {
+        tableModel = new DefaultTableModel(new String[]{"ID", "Họ tên", "Ngày sinh", "Giới tính", "SĐT", "Phụ huynh", "SĐT PH"}, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
 
@@ -262,7 +259,7 @@ public class StudentManagementPanel extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         txtSearch = styledField("");
-        txtSearch.setPreferredSize(new Dimension(330, 34));
+        txtSearch.setPreferredSize(new Dimension(400, 34));
         txtSearch.setToolTipText("Tìm theo mã, tên, SĐT hoặc phụ huynh");
         txtSearch.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) { search(); }
@@ -270,30 +267,14 @@ public class StudentManagementPanel extends JPanel {
             public void changedUpdate(DocumentEvent e) { search(); }
         });
 
-        cmbClassFilter = new JComboBox<>();
-        cmbClassFilter.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        cmbClassFilter.setBackground(Color.WHITE);
-        cmbClassFilter.setPreferredSize(new Dimension(220, 34));
-        cmbClassFilter.setToolTipText("Lọc học viên theo lớp");
-        cmbClassFilter.setBorder(new LineBorder(BORDER_C, 1, true));
-        cmbClassFilter.addActionListener(e -> search());
-
         gbc.gridx = 0;
         gbc.weightx = 0;
         filterPanel.add(toolbarLabel("Tìm kiếm"), gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 1.0;
-        filterPanel.add(txtSearch, gbc);
-
-        gbc.gridx = 2;
-        gbc.weightx = 0;
-        filterPanel.add(toolbarLabel("Lớp"), gbc);
-
-        gbc.gridx = 3;
-        gbc.weightx = 0;
         gbc.insets = new Insets(0, 0, 0, 0);
-        filterPanel.add(cmbClassFilter, gbc);
+        filterPanel.add(txtSearch, gbc);
 
         toolbar.add(tableHeader, BorderLayout.NORTH);
         toolbar.add(filterPanel, BorderLayout.CENTER);
@@ -427,12 +408,11 @@ public class StudentManagementPanel extends JPanel {
         header.setReorderingAllowed(false);
 
         table.setDefaultRenderer(Object.class, new TooltipCellRenderer());
-        table.getColumnModel().getColumn(2).setCellRenderer(new ClassBadgeRenderer());
     }
 
     private void setColumnWidths() {
         TableColumnModel cm = tblStudents.getColumnModel();
-        int[] widths = {58, 210, 155, 110, 50, 130, 165, 130};
+        int[] widths = {58, 230, 110, 76, 130, 165, 130};
         for (int i = 0; i < widths.length; i++) cm.getColumn(i).setPreferredWidth(widths[i]);
     }
 
@@ -441,13 +421,14 @@ public class StudentManagementPanel extends JPanel {
         if (viewRow < 0) return;
 
         int modelRow = tblStudents.convertRowIndexToModel(viewRow);
+        // Cols: 0=ID, 1=Họ tên, 2=Ngày sinh, 3=Giới tính, 4=SĐT, 5=Phụ huynh, 6=SĐT PH
         txtId.setText(valueAt(modelRow, 0));
         txtName.setText(valueAt(modelRow, 1));
-        txtDob.setText(valueAt(modelRow, 3));
-        cmbGender.setSelectedItem("M".equalsIgnoreCase(valueAt(modelRow, 4)) ? "Nam" : "Nữ");
-        txtPhone.setText(valueAt(modelRow, 5));
-        txtParent.setText(valueAt(modelRow, 6));
-        txtParentPhone.setText(valueAt(modelRow, 7));
+        txtDob.setText(valueAt(modelRow, 2));
+        cmbGender.setSelectedItem("Nam".equals(valueAt(modelRow, 3)) ? "Nam" : "Nữ");
+        txtPhone.setText(valueAt(modelRow, 4));
+        txtParent.setText(valueAt(modelRow, 5));
+        txtParentPhone.setText(valueAt(modelRow, 6));
         setFormModeEdit();
     }
 
@@ -458,33 +439,10 @@ public class StudentManagementPanel extends JPanel {
 
     private void search() {
         if (rowSorter == null) return;
-
         String keyword = txtSearch == null ? "" : txtSearch.getText().trim();
-        String classFilter = (cmbClassFilter == null || cmbClassFilter.getSelectedItem() == null)
-                ? "Tất cả lớp"
-                : cmbClassFilter.getSelectedItem().toString();
-
-        RowFilter<DefaultTableModel, Object> keywordFilter = null;
-        RowFilter<DefaultTableModel, Object> classFilterObj = null;
-
-        if (!keyword.isEmpty()) {
-            keywordFilter = RowFilter.regexFilter("(?i)" + Pattern.quote(keyword));
-        }
-
-        if (!"Tất cả lớp".equals(classFilter)) {
-            classFilterObj = RowFilter.regexFilter("^" + Pattern.quote(classFilter) + "$", 2);
-        }
-
-        if (keywordFilter != null && classFilterObj != null) {
-            rowSorter.setRowFilter(RowFilter.andFilter(java.util.Arrays.asList(keywordFilter, classFilterObj)));
-        } else if (keywordFilter != null) {
-            rowSorter.setRowFilter(keywordFilter);
-        } else if (classFilterObj != null) {
-            rowSorter.setRowFilter(classFilterObj);
-        } else {
-            rowSorter.setRowFilter(null);
-        }
-
+        rowSorter.setRowFilter(keyword.isEmpty()
+                ? null
+                : RowFilter.regexFilter("(?i)" + Pattern.quote(keyword)));
         updateShowingCounter();
     }
 
@@ -496,21 +454,11 @@ public class StudentManagementPanel extends JPanel {
     }
 
     private void updateClassInsight() {
-        if (lblClassInsight == null || tblStudents == null || cmbClassFilter == null) return;
-
-        String className = cmbClassFilter.getSelectedItem() == null
-                ? "Tất cả lớp"
-                : cmbClassFilter.getSelectedItem().toString();
-
-        if ("Tất cả lớp".equals(className)) {
-            lblClassInsight.setText("Đang xem toàn bộ học viên");
-            if (lblFilterBadge != null) lblFilterBadge.setText("Tất cả lớp");
-            if (lblTableSubtitle != null) lblTableSubtitle.setText("Tra cứu / lọc nhanh");
-        } else {
-            lblClassInsight.setText("Lớp " + className + " · " + tblStudents.getRowCount() + " học viên đang hiển thị");
-            if (lblFilterBadge != null) lblFilterBadge.setText(className + " · " + tblStudents.getRowCount() + " HV");
-            if (lblTableSubtitle != null) lblTableSubtitle.setText("Đang lọc theo lớp");
-        }
+        if (lblClassInsight == null || tblStudents == null) return;
+        int showing = tblStudents.getRowCount();
+        lblClassInsight.setText("Đang hiển thị " + showing + " học viên");
+        if (lblFilterBadge != null) lblFilterBadge.setText(showing + " kết quả");
+        if (lblTableSubtitle != null) lblTableSubtitle.setText("Tra cứu / lọc nhanh");
     }
 
     private void refreshData() {
@@ -519,26 +467,19 @@ public class StudentManagementPanel extends JPanel {
             List<Student> list = studentService.getAllStudents();
             tableModel.setRowCount(0);
 
-            Set<String> classNames = new LinkedHashSet<>();
-            classNames.add("Tất cả lớp");
-
             for (Student s : list) {
-                String className = resolveStudentClassName(s);
-                classNames.add(className);
-
+                String gender = "M".equalsIgnoreCase(s.getGender()) ? "Nam" : "Nữ";
                 tableModel.addRow(new Object[]{
                     s.getStudentId(),
                     safe(s.getFullName()),
-                    className,
                     s.getDob() != null ? sdf.format(s.getDob()) : "",
-                    safe(s.getGender()),
+                    gender,
                     safe(s.getPhone()),
                     safe(s.getParentName()),
                     safe(s.getParentPhone())
                 });
             }
 
-            refreshClassFilter(classNames);
             lblTotalStudents.setText(String.valueOf(list.size()));
             search();
             setLoadingState(false, "Dữ liệu đã cập nhật");
@@ -551,47 +492,6 @@ public class StudentManagementPanel extends JPanel {
     private void setLoadingState(boolean loading, String message) {
         setCursor(loading ? Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR) : Cursor.getDefaultCursor());
         if (lblStatus != null) lblStatus.setText(message);
-    }
-
-    private void refreshClassFilter(Set<String> classNames) {
-        if (cmbClassFilter == null) return;
-
-        Object selected = cmbClassFilter.getSelectedItem();
-        cmbClassFilter.removeAllItems();
-
-        for (String className : classNames) {
-            cmbClassFilter.addItem(className);
-        }
-
-        if (selected != null) {
-            cmbClassFilter.setSelectedItem(selected.toString());
-        }
-
-        if (cmbClassFilter.getSelectedIndex() == -1 && cmbClassFilter.getItemCount() > 0) {
-            cmbClassFilter.setSelectedIndex(0);
-        }
-    }
-
-    private String resolveStudentClassName(Student student) {
-        String[] methodNames = {
-                "getClassName",
-                "getStudyClassName",
-                "getClassCode",
-                "getStudyClassCode",
-                "getClassTitle"
-        };
-
-        for (String methodName : methodNames) {
-            try {
-                Method method = student.getClass().getMethod(methodName);
-                Object value = method.invoke(student);
-                String text = safe(value);
-                if (!text.isEmpty()) return text;
-            } catch (Exception ignored) {
-            }
-        }
-
-        return "Chưa xếp lớp";
     }
 
     private String safe(Object v) {
@@ -622,16 +522,12 @@ public class StudentManagementPanel extends JPanel {
                 JOptionPane.showMessageDialog(this, "Đã thêm học viên mới thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
             } else {
                 s.setStudentId(Integer.parseInt(txtId.getText().trim()));
-                callUpdateStudentIfExists(s);
+                studentService.updateStudent(s);
                 JOptionPane.showMessageDialog(this, "Cập nhật học viên thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
             }
 
             clearForm();
             refreshData();
-        } catch (NoSuchMethodException ex) {
-            JOptionPane.showMessageDialog(this,
-                    "StudentService chưa có hàm updateStudent(Student).\nHãy thêm hàm update trong Service/DAO rồi bấm Lưu lại.",
-                    "Thiếu chức năng cập nhật", JOptionPane.WARNING_MESSAGE);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi nhập liệu", JOptionPane.WARNING_MESSAGE);
         }
@@ -652,11 +548,6 @@ public class StudentManagementPanel extends JPanel {
         if (!parentPhone.isEmpty() && !parentPhone.matches(phoneRegex)) {
             throw new Exception("SĐT phụ huynh phải bắt đầu bằng 0 và có 10-11 số.");
         }
-    }
-
-    private void callUpdateStudentIfExists(Student s) throws Exception {
-        Method m = studentService.getClass().getMethod("updateStudent", Student.class);
-        m.invoke(studentService, s);
     }
 
     private void deleteStudent() {
@@ -753,9 +644,14 @@ public class StudentManagementPanel extends JPanel {
                 setForeground(PRIMARY_DARK);
                 setFont(new Font("Segoe UI", Font.BOLD, 13));
                 setHorizontalAlignment(SwingConstants.CENTER);
-            } else if (column == 4) {
+            } else if (column == 3) { // Giới tính
                 setFont(new Font("Segoe UI", Font.BOLD, 13));
                 setHorizontalAlignment(SwingConstants.CENTER);
+                if (!isSelected) {
+                    String v = value == null ? "" : value.toString();
+                    if ("Nam".equals(v))      { setForeground(new Color(37, 99, 235)); }
+                    else if ("Nữ".equals(v))  { setForeground(new Color(219, 39, 119)); }
+                }
             } else {
                 setFont(new Font("Segoe UI", Font.PLAIN, 13));
                 setHorizontalAlignment(SwingConstants.LEFT);

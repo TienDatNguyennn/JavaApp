@@ -1,5 +1,6 @@
 package com.mycompany.myapp.service;
 
+import com.mycompany.myapp.config.DBConnection;
 import com.mycompany.myapp.model.Invoice;
 import com.mycompany.myapp.repository.InvoiceRepository;
 import java.util.List;
@@ -25,21 +26,36 @@ public class InvoiceService {
     public String addInvoice(Invoice inv) {
         if (inv.getStudentId() <= 0)
             return "Ma hoc vien khong hop le.";
-        if (inv.getTotalAmount() <= 0)
-            return "Hoc phi phai lon hon 0.";
+        if (inv.getTotalAmount() < 0)
+            return "Hoc phi khong duoc am.";
         if (inv.getDiscountAmt() < 0)
             return "Giam gia khong duoc am.";
         if (inv.getDiscountAmt() > inv.getTotalAmount())
             return "Giam gia khong the lon hon hoc phi.";
+
+        // Tinh finalAmount TRUOC khi validate amountPaid
+        double finalAmt = inv.getTotalAmount() - inv.getDiscountAmt();
+        inv.setFinalAmount(finalAmt);
+
         if (inv.getAmountPaid() < 0)
             return "So tien da nop khong duoc am.";
-        if (inv.getAmountPaid() > inv.getFinalAmount())
-            return "So tien da nop vuot qua hoc phi thuc thu.";
+        if (inv.getAmountPaid() > finalAmt)
+            return "So tien da nop vuot qua hoc phi thuc thu (" + String.format("%,.0f", finalAmt) + "d).";
 
-        // Tu tinh final_amount
-        inv.setFinalAmount(inv.getTotalAmount() - inv.getDiscountAmt());
-
-        return repo.insert(inv) ? "SUCCESS" : "Loi them hoa don. Vui long thu lai.";
+        try {
+            boolean ok = repo.insert(inv);
+            if (ok) {
+                DBConnection.commitTransaction();
+                return "SUCCESS";
+            } else {
+                DBConnection.rollbackTransaction();
+                return "Loi them hoa don. Vui long thu lai.";
+            }
+        } catch (Exception e) {
+            DBConnection.rollbackTransaction();
+            System.err.println("[InvoiceService] addInvoice: " + e.getMessage());
+            return "Loi them hoa don: " + e.getMessage();
+        }
     }
 
     // ── UPDATE ─────────────────────────────────────────────────────
@@ -52,17 +68,24 @@ public class InvoiceService {
             return "Giam gia khong duoc am.";
         if (inv.getDiscountAmt() > inv.getTotalAmount())
             return "Giam gia khong the lon hon hoc phi.";
+
+        // Tinh finalAmount TRUOC khi validate amountPaid
+        double finalAmt = inv.getTotalAmount() - inv.getDiscountAmt();
+        inv.setFinalAmount(finalAmt);
+
         if (inv.getAmountPaid() < 0)
             return "So tien da nop khong duoc am.";
+        if (inv.getAmountPaid() > finalAmt)
+            return "So tien da nop vuot qua hoc phi thuc thu (" + String.format("%,.0f", finalAmt) + "d).";
 
-        // Tu tinh lai final_amount
-        inv.setFinalAmount(inv.getTotalAmount() - inv.getDiscountAmt());
-
-        if (inv.getAmountPaid() > inv.getFinalAmount())
-            return "So tien da nop vuot qua hoc phi thuc thu ("
-                   + String.format("%,.0f", inv.getFinalAmount()) + "d).";
-
-        return repo.update(inv) ? "SUCCESS" : "Loi cap nhat hoa don. Vui long thu lai.";
+        try {
+            boolean ok = repo.update(inv);
+            if (ok) { DBConnection.commitTransaction(); return "SUCCESS"; }
+            else    { DBConnection.rollbackTransaction(); return "Loi cap nhat hoa don. Vui long thu lai."; }
+        } catch (Exception e) {
+            DBConnection.rollbackTransaction();
+            return "Loi cap nhat hoa don: " + e.getMessage();
+        }
     }
 
     // ── DELETE ─────────────────────────────────────────────────────
@@ -75,7 +98,14 @@ public class InvoiceService {
         if ("SENT".equals(inv.getApiStatus()) || "ADJUSTED".equals(inv.getApiStatus()))
             return "Khong the xoa hoa don da phat hanh len he thong dien tu.";
 
-        return repo.softDelete(invoiceId) ? "SUCCESS" : "Loi xoa hoa don. Vui long thu lai.";
+        try {
+            boolean ok = repo.softDelete(invoiceId);
+            if (ok) { DBConnection.commitTransaction(); return "SUCCESS"; }
+            else    { DBConnection.rollbackTransaction(); return "Loi xoa hoa don. Vui long thu lai."; }
+        } catch (Exception e) {
+            DBConnection.rollbackTransaction();
+            return "Loi xoa hoa don: " + e.getMessage();
+        }
     }
 
     // ── PAYMENT ────────────────────────────────────────────────────
@@ -88,8 +118,14 @@ public class InvoiceService {
                    + String.format("%,.0f", finalAmount) + "d).";
         if (method == null || method.isEmpty())
             return "Vui long chon phuong thuc thanh toan.";
-        return repo.updatePayment(invoiceId, amountPaid, method)
-               ? "SUCCESS" : "Loi cap nhat DB. Vui long thu lai.";
+        try {
+            boolean ok = repo.updatePayment(invoiceId, amountPaid, method);
+            if (ok) { DBConnection.commitTransaction(); return "SUCCESS"; }
+            else    { DBConnection.rollbackTransaction(); return "Loi cap nhat DB. Vui long thu lai."; }
+        } catch (Exception e) {
+            DBConnection.rollbackTransaction();
+            return "Loi cap nhat thanh toan: " + e.getMessage();
+        }
     }
 
     // ── INVOICE ELECTRONIC ────────────────────────────────────────

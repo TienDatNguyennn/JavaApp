@@ -66,7 +66,7 @@ public class ManageInvoicePanel extends JPanel {
         p.setOpaque(false);
         p.setBorder(new EmptyBorder(0, 0, 16, 0));
 
-        JLabel title = new JLabel("Quan ly hoc phi");
+        JLabel title = new JLabel("Quản lý học phí");
         title.setFont(new Font("Segoe UI", Font.BOLD, 20));
         title.setForeground(TEXT_MAIN);
 

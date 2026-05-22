@@ -64,9 +64,10 @@ public class GradeRepository {
         return list;
     }
 
-    // Insert điểm mới
+    // Insert điểm mới — dùng MAX+1 để tránh xung đột với identity sequence
     public void insertGrade(Connection conn, int studentId, int classId, double finalScore, String rank) throws SQLException {
-        String sql = "INSERT INTO COURSE_RESULT (student_id, class_id, final_score, rank, is_deleted) VALUES (?, ?, ?, ?, 0)";
+        String sql = "INSERT INTO COURSE_RESULT (result_id, student_id, class_id, final_score, rank, is_deleted) " +
+                     "VALUES ((SELECT NVL(MAX(result_id), 0) + 1 FROM COURSE_RESULT), ?, ?, ?, ?, 0)";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, studentId);
             ps.setInt(2, classId);

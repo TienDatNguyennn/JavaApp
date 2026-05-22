@@ -23,25 +23,40 @@ public class StudentDAO {
     }
 
     public void insert(Student s) throws SQLException {
-        String sql = "INSERT INTO STUDENT (full_name, dob, gender, phone, parent_name, parent_phone, address, managed_by) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        // Dùng MAX+1 để tránh lệch sequence với dữ liệu mẫu đã insert explicit ID
+        String sql = "INSERT INTO STUDENT " +
+                     "(student_id, full_name, dob, gender, phone, parent_name, parent_phone, address, managed_by) " +
+                     "VALUES ((SELECT NVL(MAX(student_id),0)+1 FROM STUDENT), ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setNString(1, s.getFullName());
-            ps.setDate(2, new java.sql.Date(s.getDob().getTime()));
+            ps.setDate  (2, new java.sql.Date(s.getDob().getTime()));
             ps.setString(3, s.getGender());
             ps.setString(4, s.getPhone());
             ps.setNString(5, s.getParentName());
             ps.setString(6, s.getParentPhone());
             ps.setNString(7, s.getAddress());
-            
-            // Xử lý an toàn: Nếu ID > 0 thì mới lưu vào DB, ngược lại lưu NULL
-            if(s.getManagedBy() != null && s.getManagedBy() > 0) {
+            if (s.getManagedBy() != null && s.getManagedBy() > 0)
                 ps.setInt(8, s.getManagedBy());
-            } else {
+            else
                 ps.setNull(8, Types.INTEGER);
-            }
-            
+            ps.executeUpdate();
+        }
+    }
+
+    public void update(Student s) throws SQLException {
+        String sql = "UPDATE STUDENT SET full_name=?, dob=?, gender=?, phone=?, " +
+                     "parent_name=?, parent_phone=?, updated_at=SYSDATE " +
+                     "WHERE student_id=? AND is_deleted=0";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setNString(1, s.getFullName());
+            ps.setDate  (2, new java.sql.Date(s.getDob().getTime()));
+            ps.setString(3, s.getGender());
+            ps.setString(4, s.getPhone());
+            ps.setNString(5, s.getParentName());
+            ps.setString(6, s.getParentPhone());
+            ps.setInt   (7, s.getStudentId());
             ps.executeUpdate();
         }
     }

@@ -12,7 +12,7 @@ public class InvoiceRepository {
     public List<Invoice> findAll() {
         List<Invoice> list = new ArrayList<>();
         String sql =
-            "SELECT i.invoice_id, i.student_id, s.full_name, i.staff_id, " +
+            "SELECT i.invoice_id, i.student_id, s.full_name, i.staff_id, i.promo_id, " +
             "       i.total_amount, i.discount_amt, i.final_amount, " +
             "       i.amount_paid, i.payment_method, i.status, " +
             "       i.api_status, i.created_at " +
@@ -52,7 +52,7 @@ public List<Invoice> findByFilter(String keyword, String status) {
         // 2. Tiếp tục sắp xếp theo trạng thái (UNPAID -> PARTIAL -> Khác) -> Ưu tiên số 2
         // 3. Cuối cùng mới sắp xếp theo ngày tạo giảm dần -> Ưu tiên số 3
         String sql =
-            "SELECT i.invoice_id, i.student_id, s.full_name, i.staff_id, " +
+            "SELECT i.invoice_id, i.student_id, s.full_name, i.staff_id, i.promo_id, " +
             "       i.total_amount, i.discount_amt, i.final_amount, " +
             "       i.amount_paid, i.payment_method, i.status, " +
             "       i.api_status, i.created_at " +
@@ -113,7 +113,7 @@ public List<Invoice> findByFilter(String keyword, String status) {
     }
     public Invoice findById(int id) {
         String sql =
-            "SELECT i.invoice_id, i.student_id, s.full_name, i.staff_id, " +
+            "SELECT i.invoice_id, i.student_id, s.full_name, i.staff_id, i.promo_id, " +
             "       i.total_amount, i.discount_amt, i.final_amount, " +
             "       i.amount_paid, i.payment_method, i.status, " +
             "       i.api_status, i.created_at " +
@@ -131,56 +131,41 @@ public List<Invoice> findByFilter(String keyword, String status) {
         }
         return null;
     }
-public boolean insert(Invoice inv) {
-        // Cập nhật câu lệnh SQL: 
-        // 1. Loại bỏ is_deleted (để DB tự dùng DEFAULT 0)
-        // 2. Đảm bảo status và api_status luôn có giá trị
+public boolean insert(Invoice inv) throws SQLException {
         String sql =
             "INSERT INTO INVOICE " +
-            "  (student_id, staff_id, total_amount, discount_amt, final_amount, " +
+            "  (invoice_id, student_id, staff_id, promo_id, total_amount, discount_amt, final_amount, " +
             "   amount_paid, payment_method, status, api_status, created_at, updated_at) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, SYSDATE, SYSDATE)";
-            
+            "VALUES ((SELECT NVL(MAX(invoice_id), 0) + 1 FROM INVOICE), " +
+            "        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, SYSDATE, SYSDATE)";
+
         try (Connection c = DBConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
-            
-            // 1. student_id (NOT NULL)
-            ps.setInt(1, inv.getStudentId());
-            
-            // 2. staff_id (NOT NULL)
-            ps.setInt(2, inv.getStaffId());
-            
-            // 3. total_amount (NOT NULL)
-            ps.setDouble(3, inv.getTotalAmount());
-            
-            // 4. discount_amt (Sử dụng giá trị từ model hoặc mặc định 0)
-            ps.setDouble(4, inv.getDiscountAmt());
-            
-            // 5. final_amount (NOT NULL) - Nên tính toán lại để đảm bảo chính xác
-            double finalAmt = inv.getTotalAmount() - inv.getDiscountAmt();
-            ps.setDouble(5, finalAmt > 0 ? finalAmt : 0);
-            
-            // 6. amount_paid
-            ps.setDouble(6, inv.getAmountPaid());
-            
-            // 7. payment_method (Có thể NULL nên cần kiểm tra)
-            ps.setString(7, (inv.getPaymentMethod() == null || inv.getPaymentMethod().isEmpty()) 
-                             ? "CASH" : inv.getPaymentMethod());
-            
-            // 8. status (NOT NULL) - Gọi hàm calcStatus để lấy giá trị chính xác
-            String currentStatus = calcStatus(inv.getAmountPaid(), finalAmt);
-            ps.setString(8, currentStatus);
-            
-            // 9. api_status (NOT NULL)
-            ps.setString(9, (inv.getApiStatus() == null) ? "PENDING" : inv.getApiStatus());
 
-            int result = ps.executeUpdate();
-            return result > 0;
-            
-        } catch (SQLException e) {
-            // In lỗi chi tiết từ Oracle để debug (Ví dụ: ORA-00001, ORA-02291...)
-            System.err.println("[InvoiceRepo] insert error: " + e.getMessage());
-            return false;
+            ps.setInt(1, inv.getStudentId());
+            int staffId = inv.getStaffId();
+            if (staffId <= 0) staffId = com.mycompany.myapp.utils.SessionStore.getUserId();
+            if (staffId <= 0) staffId = 1; // fallback
+            ps.setInt(2, staffId);
+
+            if (inv.getPromoId() > 0) ps.setInt(3, inv.getPromoId());
+            else                       ps.setNull(3, Types.INTEGER);
+
+            ps.setDouble(4, inv.getTotalAmount());
+            ps.setDouble(5, inv.getDiscountAmt());
+
+            double finalAmt = inv.getTotalAmount() - inv.getDiscountAmt();
+            ps.setDouble(6, finalAmt > 0 ? finalAmt : 0);
+
+            ps.setDouble(7, inv.getAmountPaid());
+            ps.setString(8, (inv.getPaymentMethod() == null || inv.getPaymentMethod().isEmpty())
+                             ? "CASH" : inv.getPaymentMethod());
+
+            String currentStatus = calcStatus(inv.getAmountPaid(), finalAmt);
+            ps.setString(9, currentStatus);
+            ps.setString(10, (inv.getApiStatus() == null) ? "PENDING" : inv.getApiStatus());
+
+            return ps.executeUpdate() > 0;
         }
     }
     public boolean update(Invoice inv) {
@@ -188,6 +173,7 @@ public boolean insert(Invoice inv) {
             "UPDATE INVOICE " +
             "SET    student_id     = ?, " +
             "       staff_id       = ?, " +
+            "       promo_id       = ?, " +
             "       total_amount   = ?, " +
             "       discount_amt   = ?, " +
             "       final_amount   = ?, " +
@@ -199,13 +185,18 @@ public boolean insert(Invoice inv) {
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt   (1, inv.getStudentId());
             ps.setInt   (2, inv.getStaffId());
-            ps.setDouble(3, inv.getTotalAmount());
-            ps.setDouble(4, inv.getDiscountAmt());
-            ps.setDouble(5, inv.getFinalAmount());
-            ps.setDouble(6, inv.getAmountPaid());
-            ps.setString(7, inv.getPaymentMethod());
-            ps.setString(8, calcStatus(inv.getAmountPaid(), inv.getFinalAmount()));
-            ps.setInt   (9, inv.getInvoiceId());
+            if (inv.getPromoId() > 0) {
+                ps.setInt(3, inv.getPromoId());
+            } else {
+                ps.setNull(3, Types.INTEGER);
+            }
+            ps.setDouble(4, inv.getTotalAmount());
+            ps.setDouble(5, inv.getDiscountAmt());
+            ps.setDouble(6, inv.getFinalAmount());
+            ps.setDouble(7, inv.getAmountPaid());
+            ps.setString(8, inv.getPaymentMethod());
+            ps.setString(9, calcStatus(inv.getAmountPaid(), inv.getFinalAmount()));
+            ps.setInt   (10, inv.getInvoiceId());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             System.err.println("[InvoiceRepo] update: " + e.getMessage());
@@ -285,6 +276,7 @@ public boolean insert(Invoice inv) {
         inv.setStudentId    (rs.getInt    ("student_id"));
         inv.setStudentName  (rs.getNString("full_name"));
         inv.setStaffId      (rs.getInt    ("staff_id"));
+        inv.setPromoId      (rs.getInt    ("promo_id"));
         inv.setTotalAmount  (rs.getDouble ("total_amount"));
         inv.setDiscountAmt  (rs.getDouble ("discount_amt"));
         inv.setFinalAmount  (rs.getDouble ("final_amount"));

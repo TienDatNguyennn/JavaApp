@@ -70,13 +70,64 @@ public class TeacherAssignmentDAO {
     }
 
     // Gán giáo viên vào lớp
+    // Luồng:
+    //   1. Kiểm tra trùng lịch trước (Java-side) để bắt lỗi rõ ràng và
+    //      tránh kích hoạt trigger trên bảng đang mutating.
+    //   2. MERGE: nếu cặp (teacher_id, class_id) đã tồn tại (kể cả đã
+    //      xóa mềm) → UPDATE is_deleted = 0 (không INSERT → trigger không
+    //      kích hoạt). Nếu chưa tồn tại → INSERT mới.
     public void assignTeacher(int teacherId, int classId) throws SQLException {
-        String sql = "INSERT INTO TEACHING_ASSIGNMENT (teacher_id, class_id) VALUES (?, ?)";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        Connection conn = DBConnection.getConnection();
+
+        // ── Bước 1: kiểm tra xung đột lịch (Java pre-check) ────────────
+        checkScheduleConflict(conn, teacherId, classId);
+
+        // ── Bước 2: MERGE ────────────────────────────────────────────────
+        String sql = "MERGE INTO TEACHING_ASSIGNMENT ta " +
+                     "USING (SELECT ? AS teacher_id, ? AS class_id FROM DUAL) src " +
+                     "ON (ta.teacher_id = src.teacher_id AND ta.class_id = src.class_id) " +
+                     "WHEN MATCHED THEN " +
+                     "  UPDATE SET ta.is_deleted = 0, ta.updated_at = SYSDATE " +
+                     "WHEN NOT MATCHED THEN " +
+                     "  INSERT (teacher_id, class_id) VALUES (src.teacher_id, src.class_id)";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, teacherId);
             ps.setInt(2, classId);
             ps.executeUpdate();
+        }
+    }
+
+    /**
+     * Kiểm tra giáo viên có bị trùng lịch với lớp khác không.
+     * Dùng cùng logic JOIN với trigger gốc (trg_PreventTeacherCollision).
+     * Ném SQLException với errorCode=20003 nếu phát hiện xung đột.
+     */
+    private void checkScheduleConflict(Connection conn, int teacherId, int classId)
+            throws SQLException {
+        String sql =
+            "SELECT COUNT(*) " +
+            "  FROM CLASS_SCHEDULE cs_new " +
+            "  JOIN CLASS_SCHEDULE cs_old ON cs_new.day_of_week = cs_old.day_of_week " +
+            "  JOIN TEACHING_ASSIGNMENT ta ON ta.class_id = cs_old.class_id " +
+            " WHERE cs_new.class_id   = ? " +   // lớp sắp gán
+            "   AND ta.teacher_id     = ? " +   // giáo viên
+            "   AND ta.is_deleted     = 0 " +
+            "   AND cs_new.is_deleted = 0 " +
+            "   AND cs_old.is_deleted = 0 " +
+            "   AND ta.class_id      <> ? " +   // không so sánh với chính lớp đó
+            "   AND cs_new.start_time < cs_old.end_time " +
+            "   AND cs_new.end_time   > cs_old.start_time";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, classId);
+            ps.setInt(2, teacherId);
+            ps.setInt(3, classId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next() && rs.getInt(1) > 0) {
+                    throw new SQLException(
+                        "Giáo viên này đã bị trùng lịch dạy ở một lớp khác!",
+                        "45000", 20003);
+                }
+            }
         }
     }
 
