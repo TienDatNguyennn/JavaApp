@@ -2,6 +2,7 @@ package com.mycompany.myapp.view.screens.ThanhToan;
 
 import com.mycompany.myapp.controller.FinanceController;
 import com.mycompany.myapp.model.Invoice;
+import com.mycompany.myapp.util.EmailService;
 import com.mycompany.myapp.util.InvoicePdfGenerator;
 import com.mycompany.myapp.view.components.CustomButton;
 
@@ -11,6 +12,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.text.NumberFormat;
@@ -199,6 +201,28 @@ public class InvoiceIssuePanel extends JPanel {
         btnPdf.setAlignmentX(LEFT_ALIGNMENT);
         btnPdf.addActionListener(e -> printFromForm());
         card.add(btnPdf);
+        addGap(card, 8);
+
+        // Nút gửi email
+        CustomButton btnEmail = new CustomButton("Gửi Email hóa đơn");
+        btnEmail.setColors(new Color(25, 135, 84), new Color(20, 108, 67));
+        btnEmail.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnEmail.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+        btnEmail.setAlignmentX(LEFT_ALIGNMENT);
+        btnEmail.addActionListener(e -> sendEmailAction());
+        card.add(btnEmail);
+        addGap(card, 6);
+
+        // Link cài đặt Gmail
+        JButton btnCfg = new JButton("⚙  Cài đặt tài khoản Gmail gửi...");
+        btnCfg.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        btnCfg.setForeground(TEXT_MUTE);
+        btnCfg.setBorderPainted(false);
+        btnCfg.setContentAreaFilled(false);
+        btnCfg.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnCfg.setAlignmentX(LEFT_ALIGNMENT);
+        btnCfg.addActionListener(e -> showEmailConfig());
+        card.add(btnCfg);
 
         card.add(Box.createVerticalGlue());
         return card;
@@ -601,6 +625,150 @@ public class InvoiceIssuePanel extends JPanel {
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "Lỗi đọc mã hóa đơn.",
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // ── Email ─────────────────────────────────────────────────────────
+
+    /** Gửi hóa đơn PDF qua Gmail đến địa chỉ email đã nhập. */
+    private void sendEmailAction() {
+        // Kiểm tra cấu hình
+        if (!EmailService.isConfigured()) {
+            int ans = JOptionPane.showConfirmDialog(this,
+                    "Chưa cấu hình Gmail gửi hóa đơn.\nMở cài đặt ngay?",
+                    "Cần cấu hình", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (ans == JOptionPane.YES_OPTION) showEmailConfig();
+            return;
+        }
+
+        int idx = cmbIssueInvoice.getSelectedIndex();
+        if (paidInvoices == null || paidInvoices.isEmpty()
+                || idx < 0 || idx >= paidInvoices.size()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn hóa đơn.",
+                    "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String toEmail = txtEmail.getText().trim();
+        if (toEmail.isEmpty() || !toEmail.contains("@")) {
+            JOptionPane.showMessageDialog(this,
+                    "Vui lòng nhập địa chỉ email người nhận hợp lệ\nvào ô \"Email nhận hóa đơn\".",
+                    "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            txtEmail.requestFocus();
+            return;
+        }
+
+        Invoice inv = paidInvoices.get(idx);
+        String buyer   = txtBuyerName.getText().trim().isEmpty()
+                       ? inv.getStudentName() : txtBuyerName.getText().trim();
+        String taxCode = txtTaxCode.getText().trim();
+        String address = txtAddress.getText().trim();
+        String invType = cmbInvoiceType.getSelectedItem().toString();
+
+        // Chạy trong background thread để không đóng băng UI
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+        new Thread(() -> {
+            try {
+                // Sinh PDF vào bộ nhớ
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                InvoicePdfGenerator.exportToStream(inv, buyer, taxCode,
+                        address, toEmail, invType, bos);
+                byte[] pdfBytes = bos.toByteArray();
+
+                // Gửi email
+                EmailService.sendInvoice(toEmail, buyer, inv, pdfBytes);
+
+                SwingUtilities.invokeLater(() -> {
+                    setCursor(Cursor.getDefaultCursor());
+                    JOptionPane.showMessageDialog(InvoiceIssuePanel.this,
+                            "✔ Đã gửi hóa đơn thành công!\n\nGửi đến: " + toEmail
+                            + "\nHóa đơn: INV-" + String.format("%03d", inv.getInvoiceId()),
+                            "Gửi thành công", JOptionPane.INFORMATION_MESSAGE);
+                });
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() -> {
+                    setCursor(Cursor.getDefaultCursor());
+                    JOptionPane.showMessageDialog(InvoiceIssuePanel.this,
+                            "Lỗi gửi email: " + ex.getMessage()
+                            + "\n\nGợi ý: Kiểm tra lại App Password và bật 2-Step Verification.",
+                            "Lỗi gửi email", JOptionPane.ERROR_MESSAGE);
+                });
+            }
+        }, "email-sender").start();
+    }
+
+    /** Dialog cài đặt Gmail gửi hóa đơn. */
+    private void showEmailConfig() {
+        JTextField txtGmail = new JTextField(26);
+        JPasswordField txtPass = new JPasswordField(26);
+
+        // Load config hiện tại nếu có
+        try {
+            java.util.Properties p = EmailService.loadConfig();
+            txtGmail.setText(p.getProperty("sender.email", ""));
+        } catch (Exception ignored) {}
+
+        JPanel form = new JPanel();
+        form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
+
+        // Hướng dẫn
+        JTextArea guide = new JTextArea(
+                "Hướng dẫn lấy App Password:\n"
+                + "1. Truy cập https://myaccount.google.com/security\n"
+                + "2. Bật 2-Step Verification (nếu chưa bật)\n"
+                + "3. Tìm \"App passwords\" → chọn \"Mail\" → Generate\n"
+                + "4. Copy 16 ký tự vào ô bên dưới (không cần dấu cách)");
+        guide.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        guide.setEditable(false);
+        guide.setBackground(new Color(255, 253, 230));
+        guide.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(255, 213, 79), 1, true),
+                BorderFactory.createEmptyBorder(8, 10, 8, 10)));
+        form.add(guide);
+        form.add(Box.createVerticalStrut(12));
+
+        form.add(new JLabel("Gmail gửi hóa đơn:"));
+        form.add(Box.createVerticalStrut(4));
+        form.add(txtGmail);
+        form.add(Box.createVerticalStrut(10));
+        form.add(new JLabel("App Password (16 ký tự):"));
+        form.add(Box.createVerticalStrut(4));
+        form.add(txtPass);
+        form.add(Box.createVerticalStrut(4));
+
+        JLabel note = new JLabel("* Mật khẩu được lưu cục bộ trên máy, không gửi đi đâu.");
+        note.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        note.setForeground(TEXT_MUTE);
+        form.add(note);
+
+        int result = JOptionPane.showConfirmDialog(this, form,
+                "Cài đặt Gmail", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (result == JOptionPane.OK_OPTION) {
+            String gmail = txtGmail.getText().trim();
+            String pass  = new String(txtPass.getPassword()).trim();
+            if (gmail.isEmpty() || !gmail.contains("@")) {
+                JOptionPane.showMessageDialog(this, "Gmail không hợp lệ!",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (pass.length() < 16) {
+                JOptionPane.showMessageDialog(this,
+                        "App Password phải có ít nhất 16 ký tự!",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            try {
+                EmailService.saveConfig(gmail, pass);
+                JOptionPane.showMessageDialog(this,
+                        "✔ Đã lưu cấu hình Gmail!\n" + gmail,
+                        "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi lưu cấu hình: " + ex.getMessage(),
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
