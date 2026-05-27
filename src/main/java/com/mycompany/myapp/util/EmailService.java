@@ -42,15 +42,15 @@ public class EmailService {
             throw new Exception("Chưa cấu hình tài khoản gửi email.");
         }
 
-        // ── SMTP ─────────────────────────────────────────────────────
+        // ── SMTP (port 465 / SSL) ─────────────────────────────────────
         Properties mailProps = new Properties();
         mailProps.put("mail.smtp.host",              "smtp.gmail.com");
-        mailProps.put("mail.smtp.port",              "587");
+        mailProps.put("mail.smtp.port",              "465");
         mailProps.put("mail.smtp.auth",              "true");
-        mailProps.put("mail.smtp.starttls.enable",   "true");
+        mailProps.put("mail.smtp.ssl.enable",        "true");
         mailProps.put("mail.smtp.ssl.trust",         "smtp.gmail.com");
-        mailProps.put("mail.smtp.connectiontimeout", "10000");
-        mailProps.put("mail.smtp.timeout",           "10000");
+        mailProps.put("mail.smtp.connectiontimeout", "15000");
+        mailProps.put("mail.smtp.timeout",           "15000");
 
         Session session = Session.getInstance(mailProps, new Authenticator() {
             @Override
