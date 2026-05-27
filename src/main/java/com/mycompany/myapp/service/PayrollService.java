@@ -22,6 +22,10 @@ public class PayrollService {
         return list.stream().mapToDouble(Payroll::getTotalNet).sum();
     }
 
+    public List<Payroll> getWithoutPayroll(String period, String staffType) {
+        return repo.findWithoutPayroll(period, staffType);
+    }
+
     // ── INSERT ────────────────────────────────────────────────────
     public String savePayroll(Payroll p) {
         if (p == null) return "Dữ liệu trống.";

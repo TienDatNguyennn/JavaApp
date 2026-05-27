@@ -55,6 +55,9 @@ public class PayrollPanel extends JPanel {
     private DefaultTableModel tableModel;
     private JTable tblPayroll;
 
+    private DefaultTableModel pendingTableModel;
+    private JTable tblPending;
+
     private JTextField txtUserId;
     private JTextField txtAddPeriod;
     private JTextField txtBasic;
@@ -167,7 +170,12 @@ public class PayrollPanel extends JPanel {
         ));
 
         card.add(buildTableToolbar(), BorderLayout.NORTH);
-        card.add(buildTable(), BorderLayout.CENTER);
+
+        JTabbedPane tabs = new JTabbedPane();
+        tabs.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        tabs.addTab("Đã nhập lương", buildPayrollTable());
+        tabs.addTab("Chưa nhập lương", buildPendingTable());
+        card.add(tabs, BorderLayout.CENTER);
 
         return card;
     }
@@ -218,7 +226,7 @@ public class PayrollPanel extends JPanel {
         return bar;
     }
 
-    private JScrollPane buildTable() {
+    private JScrollPane buildPayrollTable() {
         tableModel = new DefaultTableModel(
                 new String[]{
                         "Mã NV",
@@ -238,18 +246,50 @@ public class PayrollPanel extends JPanel {
         };
 
         tblPayroll = new JTable(tableModel);
-        tblPayroll.setRowHeight(35);
-        tblPayroll.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tblPayroll.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        tblPayroll.getTableHeader().setBackground(new Color(241, 243, 245));
-        tblPayroll.getTableHeader().setForeground(TEXT_MAIN);
-        tblPayroll.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        tblPayroll.setSelectionBackground(new Color(232, 228, 252));
-        tblPayroll.setSelectionForeground(TEXT_MAIN);
-        tblPayroll.setGridColor(new Color(233, 236, 239));
-        tblPayroll.setShowVerticalLines(false);
-
+        styleTable(tblPayroll);
         return new JScrollPane(tblPayroll);
+    }
+
+    private JScrollPane buildPendingTable() {
+        pendingTableModel = new DefaultTableModel(
+                new String[]{"Mã NV", "Họ và tên", "Loại nhân viên"},
+                0
+        ) {
+            @Override
+            public boolean isCellEditable(int r, int c) { return false; }
+        };
+
+        tblPending = new JTable(pendingTableModel);
+        styleTable(tblPending);
+
+        // Click vào hàng → tự điền form nhập lương (cột 2 đã là display text)
+        tblPending.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int row = tblPending.getSelectedRow();
+                if (row >= 0) {
+                    txtUserId.setText(pendingTableModel.getValueAt(row, 0).toString());
+                    txtUserId.setEditable(false);
+                    txtUserId.setBackground(new Color(241, 243, 245));
+                    txtAddPeriod.setText(txtFilterPeriod.getText().trim());
+                    cmbAddType.setSelectedItem(pendingTableModel.getValueAt(row, 2).toString());
+                }
+            }
+        });
+
+        return new JScrollPane(tblPending);
+    }
+
+    private void styleTable(JTable table) {
+        table.setRowHeight(35);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        table.getTableHeader().setBackground(new Color(241, 243, 245));
+        table.getTableHeader().setForeground(TEXT_MAIN);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.setSelectionBackground(new Color(232, 228, 252));
+        table.setSelectionForeground(TEXT_MAIN);
+        table.setGridColor(new Color(233, 236, 239));
+        table.setShowVerticalLines(false);
     }
 
     private JPanel buildAddCard() {
@@ -365,8 +405,8 @@ public class PayrollPanel extends JPanel {
         String typeCode = staffDisplayToCodeForFilter(selectedTypeDisplay);
         String keyword = txtSearchName.getText().trim().toLowerCase();
 
+        // ── Bảng đã nhập ──────────────────────────────────────────
         List<Payroll> list = ctrl.getPayroll(period, typeCode);
-
         tableModel.setRowCount(0);
 
         double totalSum = 0;
@@ -375,10 +415,7 @@ public class PayrollPanel extends JPanel {
 
         for (Payroll payroll : list) {
             String fullName = payroll.getFullName() == null ? "" : payroll.getFullName();
-
-            if (!keyword.isEmpty() && !fullName.toLowerCase().contains(keyword)) {
-                continue;
-            }
+            if (!keyword.isEmpty() && !fullName.toLowerCase().contains(keyword)) continue;
 
             String staffTypeCode = payroll.getStaffType();
             String staffTypeDisplay = staffCodeToDisplay(staffTypeCode);
@@ -394,18 +431,29 @@ public class PayrollPanel extends JPanel {
             });
 
             totalSum += payroll.getTotalNet();
-
-            if (STAFF_TEACHER_CODE.equals(staffTypeCode)) {
-                teacherCount++;
-            } else if (STAFF_OFFICE_CODE.equals(staffTypeCode)) {
-                officeCount++;
-            }
+            if (STAFF_TEACHER_CODE.equals(staffTypeCode)) teacherCount++;
+            else if (STAFF_OFFICE_CODE.equals(staffTypeCode)) officeCount++;
         }
 
+        // ── Bảng chưa nhập ────────────────────────────────────────
+        List<Payroll> pending = ctrl.getWithoutPayroll(period, typeCode);
+        pendingTableModel.setRowCount(0);
+
+        for (Payroll p : pending) {
+            String fullName = p.getFullName() == null ? "" : p.getFullName();
+            if (!keyword.isEmpty() && !fullName.toLowerCase().contains(keyword)) continue;
+            pendingTableModel.addRow(new Object[]{
+                    p.getUserId(),
+                    fullName,
+                    staffCodeToDisplay(p.getStaffType())
+            });
+        }
+
+        // ── Cập nhật metric cards ──────────────────────────────────
         lblTotalSalary.setText(nf.format(totalSum) + "đ");
         lblCountTeacher.setText(String.valueOf(teacherCount));
         lblCountOffice.setText(String.valueOf(officeCount));
-        lblCountPending.setText("0");
+        lblCountPending.setText(String.valueOf(pending.size()));
     }
 
     private void prepareEdit() {

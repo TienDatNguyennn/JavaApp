@@ -182,7 +182,69 @@ public class PayrollRepository {
         }
     }
 
-    // ── 5. MAPPING ────────────────────────────────────────────────
+    // ── 5. CHƯA NHẬP LƯƠNG ────────────────────────────────────────
+    /**
+     * Lấy danh sách giáo viên / nhân viên chưa có bản ghi lương trong kỳ.
+     * staffType = "TEACHER" | "OFFICE" | null (tất cả)
+     */
+    public List<Payroll> findWithoutPayroll(String payPeriod, String staffType) {
+        List<Payroll> list = new ArrayList<>();
+
+        boolean filterTeacher = staffType == null || "TEACHER".equals(staffType);
+        boolean filterOffice  = staffType == null || "OFFICE".equals(staffType);
+
+        String subquery = "(SELECT user_id FROM PAYROLL WHERE pay_period = ? AND is_deleted = 0)";
+
+        if (filterTeacher) {
+            String sql =
+                "SELECT u.user_id, u.full_name, 'TEACHER' AS staff_type " +
+                "FROM USERS u " +
+                "JOIN TEACHER_PROFILE tp ON u.user_id = tp.teacher_id AND tp.is_deleted = 0 " +
+                "WHERE u.is_deleted = 0 " +
+                "  AND u.user_id NOT IN " + subquery +
+                " ORDER BY u.full_name";
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, payPeriod);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) list.add(mapMissing(rs));
+                }
+            } catch (SQLException e) {
+                System.err.println("[PayrollRepo] findWithoutPayroll(TEACHER) error: " + e.getMessage());
+            }
+        }
+
+        if (filterOffice) {
+            String sql =
+                "SELECT u.user_id, u.full_name, 'OFFICE' AS staff_type " +
+                "FROM USERS u " +
+                "JOIN OFFICE_STAFF_PROFILE osp ON u.user_id = osp.staff_id AND osp.is_deleted = 0 " +
+                "WHERE u.is_deleted = 0 " +
+                "  AND u.user_id NOT IN " + subquery +
+                " ORDER BY u.full_name";
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, payPeriod);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) list.add(mapMissing(rs));
+                }
+            } catch (SQLException e) {
+                System.err.println("[PayrollRepo] findWithoutPayroll(OFFICE) error: " + e.getMessage());
+            }
+        }
+
+        return list;
+    }
+
+    private Payroll mapMissing(ResultSet rs) throws SQLException {
+        Payroll p = new Payroll();
+        p.setUserId(rs.getInt("user_id"));
+        p.setFullName(rs.getNString("full_name"));
+        p.setStaffType(rs.getString("staff_type"));
+        return p;
+    }
+
+    // ── 6. MAPPING ────────────────────────────────────────────────
     private Payroll mapRow(ResultSet rs) throws SQLException {
         Payroll p = new Payroll();
         p.setPayrollId(rs.getInt("payroll_id"));

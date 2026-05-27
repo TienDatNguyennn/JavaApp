@@ -57,6 +57,10 @@ public class FinanceController {
         return payrollSvc.getPayrollByPeriod(period, staffType);
     }
 
+    public List<Payroll> getWithoutPayroll(String period, String staffType) {
+        return payrollSvc.getWithoutPayroll(period, staffType);
+    }
+
     public double getTotalSalary(String period, String staffType) {
         return payrollSvc.calcTotal(getPayroll(period, staffType));
     }

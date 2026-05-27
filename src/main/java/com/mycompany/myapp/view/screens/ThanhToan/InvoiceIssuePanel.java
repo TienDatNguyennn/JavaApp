@@ -2,13 +2,17 @@ package com.mycompany.myapp.view.screens.ThanhToan;
 
 import com.mycompany.myapp.controller.FinanceController;
 import com.mycompany.myapp.model.Invoice;
+import com.mycompany.myapp.util.InvoicePdfGenerator;
 import com.mycompany.myapp.view.components.CustomButton;
 
 import javax.swing.*;
 import javax.swing.border.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
@@ -48,6 +52,7 @@ public class InvoiceIssuePanel extends JPanel {
 
     // ── Bảng trạng thái phát hành ──
     private DefaultTableModel historyModel;
+    private JTable            tblHistory;
 
     public InvoiceIssuePanel() {
         setLayout(new BorderLayout(0, 0));
@@ -184,6 +189,16 @@ public class InvoiceIssuePanel extends JPanel {
         btnIssue.setAlignmentX(LEFT_ALIGNMENT);
         btnIssue.addActionListener(e -> issueInvoice());
         card.add(btnIssue);
+        addGap(card, 8);
+
+        // Nút in PDF
+        CustomButton btnPdf = new CustomButton("In hóa đơn PDF");
+        btnPdf.setColors(new Color(13, 110, 253), new Color(10, 88, 202));
+        btnPdf.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnPdf.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+        btnPdf.setAlignmentX(LEFT_ALIGNMENT);
+        btnPdf.addActionListener(e -> printFromForm());
+        card.add(btnPdf);
 
         card.add(Box.createVerticalGlue());
         return card;
@@ -196,19 +211,31 @@ public class InvoiceIssuePanel extends JPanel {
             new LineBorder(BORDER_C, 1, true),
             new EmptyBorder(16, 16, 16, 16)));
 
+        // Header row: title + print button
+        JPanel header = new JPanel(new BorderLayout());
+        header.setOpaque(false);
+
         JLabel title = new JLabel("Trạng thái phát hành gần đây");
         title.setFont(new Font("Segoe UI", Font.BOLD, 14));
         title.setForeground(TEXT_MAIN);
-        card.add(title, BorderLayout.NORTH);
+        header.add(title, BorderLayout.WEST);
+
+        CustomButton btnPdfHistory = new CustomButton("In PDF (hàng đã chọn)");
+        btnPdfHistory.setColors(new Color(13, 110, 253), new Color(10, 88, 202));
+        btnPdfHistory.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        btnPdfHistory.addActionListener(e -> printFromHistory());
+        header.add(btnPdfHistory, BorderLayout.EAST);
+
+        card.add(header, BorderLayout.NORTH);
 
         historyModel = new DefaultTableModel(
             new String[]{"Mã HĐ", "Học viên", "Số tiền", "API Status", "Thời gian"}, 0) {
             public boolean isCellEditable(int r, int c) { return false; }
         };
-        JTable tbl = new JTable(historyModel);
-        styleTable(tbl);
-        tbl.getColumnModel().getColumn(3).setCellRenderer(apiStatusRenderer());
-        card.add(new JScrollPane(tbl), BorderLayout.CENTER);
+        tblHistory = new JTable(historyModel);
+        styleTable(tblHistory);
+        tblHistory.getColumnModel().getColumn(3).setCellRenderer(apiStatusRenderer());
+        card.add(new JScrollPane(tblHistory), BorderLayout.CENTER);
         return card;
     }
 
@@ -529,6 +556,82 @@ public class InvoiceIssuePanel extends JPanel {
         t.setGridColor(new Color(233, 236, 239));
         t.setShowVerticalLines(false);
         t.setSelectionBackground(new Color(232, 228, 252));
+    }
+
+    // ── PDF export ───────────────────────────────────────────────────
+
+    /** In PDF từ form phát hành (dùng combo + các field thông tin người mua). */
+    private void printFromForm() {
+        int idx = cmbIssueInvoice.getSelectedIndex();
+        if (paidInvoices == null || paidInvoices.isEmpty()
+                || idx < 0 || idx >= paidInvoices.size()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn hóa đơn.",
+                    "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        Invoice inv = paidInvoices.get(idx);
+        String buyer = txtBuyerName.getText().trim();
+        if (buyer.isEmpty()) buyer = inv.getStudentName();
+        exportPdf(inv, buyer,
+                txtTaxCode.getText().trim(),
+                txtAddress.getText().trim(),
+                txtEmail.getText().trim(),
+                cmbInvoiceType.getSelectedItem().toString());
+    }
+
+    /** In PDF từ bảng lịch sử (dùng hàng đang được chọn). */
+    private void printFromHistory() {
+        int row = tblHistory.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một hóa đơn trong bảng.",
+                    "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        String code = historyModel.getValueAt(row, 0).toString(); // "INV-001"
+        try {
+            int id = Integer.parseInt(code.replace("INV-", "").trim());
+            Invoice inv = ctrl.getInvoiceById(id);
+            if (inv == null) {
+                JOptionPane.showMessageDialog(this, "Không tìm thấy hóa đơn #" + id,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            exportPdf(inv, safeStr(inv.getStudentName()), "", "", "",
+                    "Hóa đơn điện tử");
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Lỗi đọc mã hóa đơn.",
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /** Hiển thị hộp thoại lưu file rồi mở PDF. */
+    private void exportPdf(Invoice inv, String buyerName, String taxCode,
+                            String address, String email, String invType) {
+        JFileChooser fc = new JFileChooser();
+        fc.setDialogTitle("Lưu hóa đơn PDF");
+        fc.setSelectedFile(new File(
+                "HoaDon_INV-" + String.format("%03d", inv.getInvoiceId()) + ".pdf"));
+        fc.setFileFilter(new FileNameExtensionFilter("PDF Files (*.pdf)", "pdf"));
+
+        if (fc.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+
+        File file = fc.getSelectedFile();
+        if (!file.getName().toLowerCase().endsWith(".pdf"))
+            file = new File(file.getAbsolutePath() + ".pdf");
+
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            InvoicePdfGenerator.exportToStream(inv, buyerName, taxCode,
+                    address, email, invType, fos);
+            JOptionPane.showMessageDialog(this,
+                    "Đã lưu PDF thành công!\n" + file.getAbsolutePath(),
+                    "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            if (Desktop.isDesktopSupported())
+                Desktop.getDesktop().open(file);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi xuất PDF: " + ex.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private DefaultTableCellRenderer apiStatusRenderer() {
