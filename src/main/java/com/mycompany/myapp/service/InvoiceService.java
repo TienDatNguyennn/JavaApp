@@ -111,21 +111,53 @@ public class InvoiceService {
     // ── PAYMENT ────────────────────────────────────────────────────
     public String recordPayment(int invoiceId, double amountPaid,
                                 double finalAmount, String method) {
+        if (invoiceId <= 0)
+            return "Hóa đơn không hợp lệ.";
         if (amountPaid <= 0)
-            return "So tien phai lon hon 0.";
-        if (amountPaid > finalAmount)
-            return "So tien vuot qua hoc phi can dong ("
-                   + String.format("%,.0f", finalAmount) + "d).";
-        if (method == null || method.isEmpty())
-            return "Vui long chon phuong thuc thanh toan.";
+            return "Số tiền thanh toán phải lớn hơn 0.";
+        if (method == null || method.trim().isEmpty())
+            return "Vui lòng chọn phương thức thanh toán.";
+
+        /*
+         * Không dùng finalAmount truyền từ UI để quyết định còn nợ hay không,
+         * vì dữ liệu trên màn hình có thể đã cũ. Repository sẽ khóa hóa đơn
+         * bằng SELECT FOR UPDATE, đọc amount_paid/final_amount mới nhất từ DB,
+         * rồi kiểm tra đã trả đủ hoặc trả vượt.
+         */
         try {
             boolean ok = repo.updatePayment(invoiceId, amountPaid, method);
-            if (ok) { DBConnection.commitTransaction(); return "SUCCESS"; }
-            else    { DBConnection.rollbackTransaction(); return "Loi cap nhat DB. Vui long thu lai."; }
+            if (ok) {
+                return "SUCCESS";
+            }
+            return "Không thể ghi nhận thanh toán. Vui lòng tải lại dữ liệu và thử lại.";
         } catch (Exception e) {
-            DBConnection.rollbackTransaction();
-            return "Loi cap nhat thanh toan: " + e.getMessage();
+            return normalizePaymentError(e);
         }
+    }
+
+    private String normalizePaymentError(Exception e) {
+        String msg = e.getMessage();
+        if (msg == null || msg.trim().isEmpty()) {
+            return "Không thể ghi nhận thanh toán. Vui lòng thử lại.";
+        }
+
+        if (msg.contains("đã được thanh toán đủ")) {
+            return "Hóa đơn này đã được thanh toán đủ. Không thể ghi nhận thêm thanh toán.";
+        }
+
+        if (msg.contains("vượt quá số tiền còn nợ")) {
+            return msg;
+        }
+
+        if (msg.contains("ORA-00054") || msg.contains("ORA-30006")) {
+            return "Hóa đơn đang được người dùng khác cập nhật. Vui lòng thử lại sau.";
+        }
+
+        if (msg.contains("ORA-00060")) {
+            return "Giao dịch bị rollback do tranh chấp khóa. Vui lòng thử lại.";
+        }
+
+        return "Lỗi ghi nhận thanh toán: " + msg;
     }
 
     // ── INVOICE ELECTRONIC ────────────────────────────────────────

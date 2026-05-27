@@ -1,6 +1,7 @@
 package com.mycompany.myapp.view.screens;
 
 import com.mycompany.myapp.controller.LoginController;
+import com.mycompany.myapp.utils.PermissionManager;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -24,7 +25,6 @@ public class LoginUI extends JFrame {
     private static final Color SIDEBAR_ACTIVE = Color.decode("#FFFFFF");
     private static final Color SIDEBAR_TEXT = Color.decode("#F8FAFC");
     private static final Color SIDEBAR_TEXT_MUTED = Color.decode("#D8D2FF");
-    private static final Color SIDEBAR_ICON_BG = Color.decode("#7657F2");
     private static final Color SIDEBAR_ACTIVE_TEXT = Color.decode("#4631B9");
     private static final Color TEXT_DARK = Color.decode("#1E293B");
     private static final Color TEXT_MUTED = Color.decode("#64748B");
@@ -70,8 +70,6 @@ public class LoginUI extends JFrame {
             return null;
         }
     }
-
-
 
     private JComponent createHeaderLogoComponent(int boxSize, int imageSize) {
         return new LogoImagePanel("/wappgpt_logo.png", boxSize, imageSize);
@@ -212,18 +210,6 @@ public class LoginUI extends JFrame {
 
         form.add(Box.createRigidArea(new Dimension(0, 28)));
 
-        JPanel socialRow = new JPanel(new GridLayout(1, 2, 14, 0));
-        socialRow.setBackground(Color.WHITE);
-        socialRow.setPreferredSize(new Dimension(470, 42));
-        socialRow.setMaximumSize(new Dimension(470, 42));
-        socialRow.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-    
-
-        
-
-    
-
         form.add(createInputLabel("Tài khoản"));
         PlaceholderTextField txtEmail = new PlaceholderTextField("");
         txtEmail.setPreferredSize(new Dimension(470, 42));
@@ -332,24 +318,6 @@ public class LoginUI extends JFrame {
         return container;
     }
 
-    private void styleGoogleButton(RoundedButton btn) {
-        btn.setText("<html><b style='color:#DB4437'>G</b>&nbsp;&nbsp;Đăng nhập Google</html>");
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        btn.setForeground(Color.decode("#374151"));
-        btn.setColors(Color.decode("#FFFFFF"), Color.decode("#F9FAFB"), Color.decode("#F3F4F6"));
-        btn.setBorderColors(Color.decode("#E5E7EB"), Color.decode("#D1D5DB"));
-        btn.setRadius(35);
-    }
-
-    private void styleFacebookButton(RoundedButton btn) {
-        btn.setText("<html><b>f</b>&nbsp;&nbsp;Đăng nhập Facebook</html>");
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        btn.setForeground(Color.WHITE);
-        btn.setColors(Color.decode("#1877F2"), Color.decode("#166FE5"), Color.decode("#145DD1"));
-        btn.setBorderColors(Color.decode("#1877F2"), Color.decode("#166FE5"));
-        btn.setRadius(35);
-    }
-
     private JLabel createInputLabel(String text) {
         JLabel label = new JLabel(text);
         label.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -360,46 +328,87 @@ public class LoginUI extends JFrame {
         return label;
     }
 
-    private JPanel createDivider(String text) {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Color.WHITE);
-        panel.setPreferredSize(new Dimension(470, 26));
-        panel.setMaximumSize(new Dimension(470, 26));
-        panel.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridy = 0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        JPanel leftLine = new JPanel();
-        leftLine.setBackground(Color.decode("#E2E8F0"));
-        leftLine.setPreferredSize(new Dimension(1, 1));
-
-        JPanel rightLine = new JPanel();
-        rightLine.setBackground(Color.decode("#E2E8F0"));
-        rightLine.setPreferredSize(new Dimension(1, 1));
-
-        JLabel label = new JLabel("  " + text + "  ", SwingConstants.CENTER);
-        label.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        label.setForeground(Color.decode("#B0B7C3"));
-
-        gbc.gridx = 0;
-        gbc.weightx = 1;
-        panel.add(leftLine, gbc);
-
-        gbc.gridx = 1;
-        gbc.weightx = 0;
-        panel.add(label, gbc);
-
-        gbc.gridx = 2;
-        gbc.weightx = 1;
-        panel.add(rightLine, gbc);
-
-        return panel;
-    }
-
     public void showError(String message) {
         JOptionPane.showMessageDialog(this, message, "Lỗi Đăng Nhập", JOptionPane.ERROR_MESSAGE);
+    }
+
+    // =========================================================
+    // PERMISSION HELPERS - FIX CHUẨN CHO TẤT CẢ ROLE
+    // =========================================================
+
+    private boolean hasRole(List<String> roles, String roleName) {
+        return roles != null && roles.contains(roleName);
+    }
+
+    private boolean canOpen(String moduleCode) {
+        return moduleCode != null && PermissionManager.canView(moduleCode);
+    }
+
+    /*
+     * Cho phép 1 màn hình kiểm tra nhiều mã quyền.
+     *
+     * Ví dụ:
+     * - Nếu DB đã có DIEM_DANH thì dùng DIEM_DANH.
+     * - Nếu DB chưa có DIEM_DANH thì fallback sang QUAN_LY_HOC_TAP.
+     */
+    private boolean canOpenAny(String... moduleCodes) {
+        if (moduleCodes == null) {
+            return false;
+        }
+
+        for (String code : moduleCodes) {
+            if (canOpen(code)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void addNavIfAllowed(
+            JPanel contentPanel,
+            JPanel sidebarContent,
+            CardLayout cardLayout,
+            List<JButton> navButtons,
+            String label,
+            String cardName,
+            JPanel panel,
+            String... moduleCodes
+    ) {
+        if (!canOpenAny(moduleCodes)) {
+            return;
+        }
+
+        contentPanel.add(panel, cardName);
+        sidebarContent.add(createNavBtn(label, cardName, contentPanel, cardLayout, navButtons));
+    }
+
+    /*
+     * Dùng cho admin hệ thống.
+     * Admin vẫn nên vào được Quản lý tài khoản / Cấu hình hệ thống theo role,
+     * kể cả lúc dữ liệu quyền chưa seed đủ.
+     */
+    private void addNavIfRoleOrPermission(
+            boolean allowByRole,
+            JPanel contentPanel,
+            JPanel sidebarContent,
+            CardLayout cardLayout,
+            List<JButton> navButtons,
+            String label,
+            String cardName,
+            JPanel panel,
+            String... moduleCodes
+    ) {
+        if (!allowByRole && !canOpenAny(moduleCodes)) {
+            return;
+        }
+
+        contentPanel.add(panel, cardName);
+        sidebarContent.add(createNavBtn(label, cardName, contentPanel, cardLayout, navButtons));
+    }
+
+    private boolean canOpenSection(String... moduleCodes) {
+        return canOpenAny(moduleCodes);
     }
 
     public void onLoginSuccess() {
@@ -433,82 +442,338 @@ public class LoginUI extends JFrame {
 
             List<JButton> navButtons = new ArrayList<>();
 
-            if (roles.contains("Nhan_Vien_Quan_Ly_He_Thong")) {
-                contentPanel.add(new com.mycompany.myapp.view.screens.QuanLyHeThong.AccountManagerUI(), "ACCOUNT_MGR");
-                contentPanel.add(new com.mycompany.myapp.view.screens.QuanLyHeThong.SystemConfigUI(), "SYSTEM_CFG");
+            boolean isAdmin = hasRole(roles, "Nhan_Vien_Quan_Ly_He_Thong");
+            boolean isGiaoVien = hasRole(roles, "Giao_Vien");
+            boolean isGiaoVu = hasRole(roles, "Nhan_Vien_Quan_Ly_Nghiep_Vu");
+            boolean isKeToan = hasRole(roles, "Nhan_Vien_Ke_Toan");
 
-                sidebarContent.add(createNavBtn("Quản lý tài khoản", "ACCOUNT_MGR", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Cấu hình hệ thống", "SYSTEM_CFG", contentPanel, cardLayout, navButtons));
+            // =====================================================
+            // 1. QUẢN TRỊ HỆ THỐNG
+            // =====================================================
+            if (isAdmin) {
+                addNavIfRoleOrPermission(
+                        true,
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Quản lý tài khoản",
+                        "ACCOUNT_MGR",
+                        new com.mycompany.myapp.view.screens.QuanLyHeThong.AccountManagerUI(),
+                        "QUAN_LY_TAI_KHOAN"
+                );
 
-            } else if (roles.contains("Giao_Vien")) {
-                contentPanel.add(new com.mycompany.myapp.view.screens.teacher.DashboardPanel(), "DASHBOARD");
-                contentPanel.add(new com.mycompany.myapp.view.screens.teacher.SchedulePanel(), "SCHEDULE");
-                contentPanel.add(new com.mycompany.myapp.view.screens.teacher.StudentListPanel(), "STUDENT_LIST");
-                contentPanel.add(new com.mycompany.myapp.view.screens.teacher.AttendancePanel(), "ATTENDANCE");
-                contentPanel.add(new com.mycompany.myapp.view.screens.teacher.AttendanceAnalyticsPanel(), "ATTENDANCE_ANA");
-                contentPanel.add(new com.mycompany.myapp.view.screens.teacher.GradeEntryPanel(), "GRADE_ENTRY");
-                contentPanel.add(new com.mycompany.myapp.view.screens.teacher.AcademicResultPanel(), "ACADEMIC_RESULT");
-                contentPanel.add(new com.mycompany.myapp.view.screens.teacher.TeacherProfilePanel(), "PROFILE");
+                addNavIfRoleOrPermission(
+                        true,
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Cấu hình hệ thống",
+                        "SYSTEM_CFG",
+                        new com.mycompany.myapp.view.screens.QuanLyHeThong.SystemConfigUI(),
+                        "QUAN_LY_HE_THONG"
+                );
+            }
 
-                sidebarContent.add(createNavBtn("Tổng quan", "DASHBOARD", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Thời khóa biểu", "SCHEDULE", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Danh sách học viên", "STUDENT_LIST", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Điểm danh lớp", "ATTENDANCE", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Theo dõi chuyên cần", "ATTENDANCE_ANA", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Nhập điểm lớp học", "GRADE_ENTRY", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Báo cáo kết quả", "ACADEMIC_RESULT", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Hồ sơ cá nhân", "PROFILE", contentPanel, cardLayout, navButtons));
+            // =====================================================
+            // 2. GIÁO VIÊN
+            //
+            // Fallback quyền:
+            // - Tổng quan / điểm danh / nhập điểm / báo cáo -> QUAN_LY_HOC_TAP
+            // - Thời khóa biểu -> QUAN_LY_LICH_BIEU
+            // - Danh sách học viên lớp phụ trách -> QUAN_LY_LOP_HOC
+            // =====================================================
+            if (isGiaoVien) {
+                sidebarContent.add(createSidebarTitle("GIẢNG DẠY", 16, 22, 6));
 
-            } else if (roles.contains("Nhan_Vien_Quan_Ly_Nghiep_Vu")) {
-                contentPanel.add(new com.mycompany.myapp.view.screens.GiaoVuUI.StudentManagementPanel(), "GV_STUDENT_MGR");
-                contentPanel.add(new com.mycompany.myapp.view.screens.GiaoVuUI.TeacherAssignmentPanel(), "GV_ASSIGN");
-                contentPanel.add(new com.mycompany.myapp.view.screens.teacher.AttendanceAnalyticsPanel(), "GV_ATTENDANCE");
-                contentPanel.add(new com.mycompany.myapp.view.screens.GiaoVuUI.ManageSubjectPanel(), "GV_SUBJECT");
-                contentPanel.add(new com.mycompany.myapp.view.screens.GiaoVuUI.StudyReportPanel(), "GV_REPORT");
-                contentPanel.add(new com.mycompany.myapp.view.screens.GiaoVuUI.ClassManagementPanel(), "GV_CLASS_MGR");
-                contentPanel.add(new com.mycompany.myapp.view.screens.GiaoVuUI.ClassEnrollmentPanel(), "GV_ENROLL");
-                contentPanel.add(new com.mycompany.myapp.view.screens.GiaoVuUI.ClassSchedulePanel(), "GV_SCHEDULE");
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Tổng quan",
+                        "DASHBOARD",
+                        new com.mycompany.myapp.view.screens.teacher.DashboardPanel(),
+                        "DASHBOARD_GIAO_VIEN",
+                        "QUAN_LY_HOC_TAP"
+                );
 
-                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.PaymentPanel(), "FIN_PAYMENT");
-                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.ManageInvoicePanel(), "FIN_MANAGE");
-                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.LookupPanel(), "FIN_LOOKUP");
-                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.InvoiceIssuePanel(), "FIN_ISSUE");
-                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.PayrollPanel(), "FIN_PAYROLL");
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Thời khóa biểu",
+                        "SCHEDULE",
+                        new com.mycompany.myapp.view.screens.teacher.SchedulePanel(),
+                        "LICH_DAY_GIAO_VIEN",
+                        "QUAN_LY_LICH_BIEU"
+                );
 
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Danh sách học viên",
+                        "STUDENT_LIST",
+                        new com.mycompany.myapp.view.screens.teacher.StudentListPanel(),
+                        "LOP_DUOC_PHAN_CONG",
+                        "QUAN_LY_LOP_HOC"
+                );
+
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Điểm danh lớp",
+                        "ATTENDANCE",
+                        new com.mycompany.myapp.view.screens.teacher.AttendancePanel(),
+                        "DIEM_DANH",
+                        "QUAN_LY_HOC_TAP"
+                );
+
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Theo dõi chuyên cần",
+                        "ATTENDANCE_ANA",
+                        new com.mycompany.myapp.view.screens.teacher.AttendanceAnalyticsPanel(),
+                        "BAO_CAO_DIEM_DANH",
+                        "QUAN_LY_HOC_TAP"
+                );
+
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Nhập điểm lớp học",
+                        "GRADE_ENTRY",
+                        new com.mycompany.myapp.view.screens.teacher.GradeEntryPanel(),
+                        "NHAP_DIEM",
+                        "QUAN_LY_HOC_TAP"
+                );
+
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Báo cáo kết quả",
+                        "ACADEMIC_RESULT",
+                        new com.mycompany.myapp.view.screens.teacher.AcademicResultPanel(),
+                        "TONG_KET_DIEM",
+                        "QUAN_LY_HOC_TAP"
+                );
+
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Hồ sơ cá nhân",
+                        "PROFILE",
+                        new com.mycompany.myapp.view.screens.teacher.TeacherProfilePanel(),
+                        "HO_SO_CA_NHAN",
+                        "QUAN_LY_HOC_TAP"
+                );
+            }
+
+            // =====================================================
+            // 3. NHÂN VIÊN GIÁO VỤ / NGHIỆP VỤ
+            // =====================================================
+            if (isGiaoVu) {
                 sidebarContent.add(createSidebarTitle("HỌC VỤ & ĐÀO TẠO", 16, 22, 6));
-                sidebarContent.add(createNavBtn("Quản lý học viên", "GV_STUDENT_MGR", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Phân công giáo viên", "GV_ASSIGN", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Tình trạng điểm danh", "GV_ATTENDANCE", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Quản lý môn học", "GV_SUBJECT", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Quản lý lớp học", "GV_CLASS_MGR", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Xếp lớp học viên", "GV_ENROLL", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Sắp lịch học", "GV_SCHEDULE", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Báo cáo học tập", "GV_REPORT", contentPanel, cardLayout, navButtons));
 
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Quản lý học viên",
+                        "GV_STUDENT_MGR",
+                        new com.mycompany.myapp.view.screens.GiaoVuUI.StudentManagementPanel(),
+                        "QUAN_LY_HOC_VIEN",
+                        "QUAN_LY_HOC_TAP"
+                );
+
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Phân công giáo viên",
+                        "GV_ASSIGN",
+                        new com.mycompany.myapp.view.screens.GiaoVuUI.TeacherAssignmentPanel(),
+                        "PHAN_CONG_GIAO_VIEN",
+                        "QUAN_LY_LOP_HOC"
+                );
+
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Tình trạng điểm danh",
+                        "GV_ATTENDANCE",
+                        new com.mycompany.myapp.view.screens.teacher.AttendanceAnalyticsPanel(),
+                        "BAO_CAO_DIEM_DANH",
+                        "QUAN_LY_HOC_TAP"
+                );
+
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Quản lý môn học",
+                        "GV_SUBJECT",
+                        new com.mycompany.myapp.view.screens.GiaoVuUI.ManageSubjectPanel(),
+                        "QUAN_LY_KHOA_HOC"
+                );
+
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Quản lý lớp học",
+                        "GV_CLASS_MGR",
+                        new com.mycompany.myapp.view.screens.GiaoVuUI.ClassManagementPanel(),
+                        "QUAN_LY_LOP_HOC"
+                );
+
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Xếp lớp học viên",
+                        "GV_ENROLL",
+                        new com.mycompany.myapp.view.screens.GiaoVuUI.ClassEnrollmentPanel(),
+                        "XEP_LOP_HOC_VIEN",
+                        "QUAN_LY_LOP_HOC"
+                );
+
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Sắp lịch học",
+                        "GV_SCHEDULE",
+                        new com.mycompany.myapp.view.screens.GiaoVuUI.ClassSchedulePanel(),
+                        "QUAN_LY_LICH_BIEU"
+                );
+
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Báo cáo học tập",
+                        "GV_REPORT",
+                        new com.mycompany.myapp.view.screens.GiaoVuUI.StudyReportPanel(),
+                        "BAO_CAO_HOC_TAP",
+                        "QUAN_LY_HOC_TAP"
+                );
+            }
+
+            // =====================================================
+            // 4. HỌC PHÍ / TÀI CHÍNH
+            // Kế toán và giáo vụ đều có thể thấy nếu có quyền tài chính.
+            // =====================================================
+            if ((isGiaoVu || isKeToan) && canOpenSection("QUAN_LY_HOC_PHI_TAI_CHINH")) {
                 sidebarContent.add(createSidebarTitle("HỌC PHÍ", 16, 22, 6));
-                sidebarContent.add(createNavBtn("Ghi nhận thanh toán", "FIN_PAYMENT", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Quản lý học phí", "FIN_MANAGE", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Tra cứu học phí", "FIN_LOOKUP", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Hóa đơn điện tử", "FIN_ISSUE", contentPanel, cardLayout, navButtons));
+
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Ghi nhận thanh toán",
+                        "FIN_PAYMENT",
+                        new com.mycompany.myapp.view.screens.ThanhToan.PaymentPanel(),
+                        "GHI_NHAN_THANH_TOAN",
+                        "QUAN_LY_HOC_PHI_TAI_CHINH"
+                );
+
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Quản lý học phí",
+                        "FIN_MANAGE",
+                        new com.mycompany.myapp.view.screens.ThanhToan.ManageInvoicePanel(),
+                        "QUAN_LY_HOC_PHI",
+                        "QUAN_LY_HOC_PHI_TAI_CHINH"
+                );
+
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Tra cứu học phí",
+                        "FIN_LOOKUP",
+                        new com.mycompany.myapp.view.screens.ThanhToan.LookupPanel(),
+                        "TRA_CUU_HOC_PHI",
+                        "QUAN_LY_HOC_PHI_TAI_CHINH"
+                );
+
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Hóa đơn điện tử",
+                        "FIN_ISSUE",
+                        new com.mycompany.myapp.view.screens.ThanhToan.InvoiceIssuePanel(),
+                        "HOA_DON_DIEN_TU",
+                        "QUAN_LY_HOC_PHI_TAI_CHINH"
+                );
 
                 sidebarContent.add(createSidebarTitle("NHÂN SỰ", 16, 22, 6));
-                sidebarContent.add(createNavBtn("Tính lương nhân viên", "FIN_PAYROLL", contentPanel, cardLayout, navButtons));
 
-            } else if (roles.contains("Nhan_Vien_Ke_Toan")) {
-                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.PaymentPanel(), "FIN_PAYMENT");
-                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.ManageInvoicePanel(), "FIN_MANAGE");
-                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.LookupPanel(), "FIN_LOOKUP");
-                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.InvoiceIssuePanel(), "FIN_ISSUE");
-                contentPanel.add(new com.mycompany.myapp.view.screens.ThanhToan.PayrollPanel(), "FIN_PAYROLL");
+                addNavIfAllowed(
+                        contentPanel,
+                        sidebarContent,
+                        cardLayout,
+                        navButtons,
+                        "Tính lương nhân viên",
+                        "FIN_PAYROLL",
+                        new com.mycompany.myapp.view.screens.ThanhToan.PayrollPanel(),
+                        "BANG_LUONG",
+                        "QUAN_LY_HOC_PHI_TAI_CHINH"
+                );
+            }
 
-                sidebarContent.add(createSidebarTitle("HỌC PHÍ", 16, 22, 6));
-                sidebarContent.add(createNavBtn("Ghi nhận thanh toán", "FIN_PAYMENT", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Quản lý học phí", "FIN_MANAGE", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Tra cứu học phí", "FIN_LOOKUP", contentPanel, cardLayout, navButtons));
-                sidebarContent.add(createNavBtn("Hóa đơn điện tử", "FIN_ISSUE", contentPanel, cardLayout, navButtons));
+            // =====================================================
+            // 5. FALLBACK AN TOÀN
+            // Không để user login vào màn trắng.
+            // =====================================================
+            if (navButtons.isEmpty()) {
+                JPanel noPermission = new JPanel(new BorderLayout());
+                noPermission.setBackground(PAGE_BG);
 
-                sidebarContent.add(createSidebarTitle("NHÂN SỰ", 16, 22, 6));
-                sidebarContent.add(createNavBtn("Tính lương nhân viên", "FIN_PAYROLL", contentPanel, cardLayout, navButtons));
+                JLabel label = new JLabel(
+                        "<html><div style='text-align:center;'>"
+                                + "<h2>Không có chức năng được cấp quyền</h2>"
+                                + "<p>Vui lòng liên hệ quản trị viên để được phân quyền.</p>"
+                                + "</div></html>",
+                        SwingConstants.CENTER
+                );
+                label.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+                label.setForeground(TEXT_MUTED);
+
+                noPermission.add(label, BorderLayout.CENTER);
+                contentPanel.add(noPermission, "NO_PERMISSION");
             }
 
             sidebarContent.add(Box.createVerticalGlue());
@@ -533,6 +798,8 @@ public class LoginUI extends JFrame {
 
             if (!navButtons.isEmpty()) {
                 navButtons.get(0).doClick();
+            } else {
+                cardLayout.show(contentPanel, "NO_PERMISSION");
             }
         });
     }
@@ -577,10 +844,6 @@ public class LoginUI extends JFrame {
                 component.repaint();
             }
         }
-
-        sidebarContent.setBorder(collapsed
-                ? new EmptyBorder(14, 0, 18, 0)
-                : new EmptyBorder(14, 0, 18, 0));
 
         toggleButton.putClientProperty("collapsed", collapsed);
         toggleButton.setToolTipText(collapsed ? "Mở rộng thanh chức năng" : "Thu gọn thanh chức năng");
@@ -747,26 +1010,48 @@ public class LoginUI extends JFrame {
 
         if (confirm == JOptionPane.YES_OPTION) {
             com.mycompany.myapp.utils.SessionStore.clearSession();
+            com.mycompany.myapp.utils.PermissionManager.clear();
+
             frame.dispose();
             new LoginUI().setVisible(true);
         }
     }
 
     private String getInitials(String name) {
-        if (name == null || name.trim().isEmpty()) return "U";
+        if (name == null || name.trim().isEmpty()) {
+            return "U";
+        }
 
         String[] parts = name.trim().split("\\s+");
-        if (parts.length == 1) return parts[0].substring(0, 1).toUpperCase();
+
+        if (parts.length == 1) {
+            return parts[0].substring(0, 1).toUpperCase();
+        }
 
         return (parts[0].substring(0, 1) + parts[parts.length - 1].substring(0, 1)).toUpperCase();
     }
 
     private String getRoleDisplayName(List<String> roles) {
-        if (roles == null || roles.isEmpty()) return "Người dùng hệ thống";
-        if (roles.contains("Nhan_Vien_Quan_Ly_He_Thong")) return "Quản trị hệ thống";
-        if (roles.contains("Nhan_Vien_Quan_Ly_Nghiep_Vu")) return "Nhân viên giáo vụ";
-        if (roles.contains("Nhan_Vien_Ke_Toan")) return "Nhân viên kế toán";
-        if (roles.contains("Giao_Vien")) return "Giáo viên";
+        if (roles == null || roles.isEmpty()) {
+            return "Người dùng hệ thống";
+        }
+
+        if (roles.contains("Nhan_Vien_Quan_Ly_He_Thong")) {
+            return "Quản trị hệ thống";
+        }
+
+        if (roles.contains("Nhan_Vien_Quan_Ly_Nghiep_Vu")) {
+            return "Nhân viên giáo vụ";
+        }
+
+        if (roles.contains("Nhan_Vien_Ke_Toan")) {
+            return "Nhân viên kế toán";
+        }
+
+        if (roles.contains("Giao_Vien")) {
+            return "Giáo viên";
+        }
+
         return roles.get(0);
     }
 
@@ -794,39 +1079,91 @@ public class LoginUI extends JFrame {
     }
 
     private String getNavIcon(String cardName, String text) {
-        if (cardName == null) return "dot";
+        if (cardName == null) {
+            return "dot";
+        }
 
         String key = cardName.toUpperCase();
         String label = text == null ? "" : text.toLowerCase();
 
-        if (key.contains("ACCOUNT")) return "user";
-        if (key.contains("SYSTEM")) return "gear";
-        if (key.contains("DASHBOARD")) return "home";
-        if (key.contains("SCHEDULE")) return "calendar";
-        if (key.contains("STUDENT")) return "students";
+        if (key.contains("ACCOUNT")) {
+            return "user";
+        }
 
-        // Tách riêng hai nghiệp vụ dễ bị trùng icon:
-        // - Điểm danh lớp: checklist.
-        // - Theo dõi chuyên cần / tình trạng điểm danh: chart/analytics.
+        if (key.contains("SYSTEM")) {
+            return "gear";
+        }
+
+        if (key.contains("DASHBOARD")) {
+            return "home";
+        }
+
+        if (key.contains("SCHEDULE")) {
+            return "calendar";
+        }
+
+        if (key.contains("STUDENT")) {
+            return "students";
+        }
+
         if (key.contains("ATTENDANCE_ANA") || label.contains("chuyên cần") || label.contains("tình trạng")) {
             return "analytics";
         }
-        if (key.contains("ATTENDANCE")) return "checklist";
 
-        if (key.contains("GRADE")) return "grade";
-        if (key.contains("ACADEMIC") || key.contains("REPORT")) return "report";
-        if (key.contains("PROFILE")) return "profile";
-        if (key.contains("ASSIGN")) return "assign";
-        if (key.contains("SUBJECT")) return "book";
-        if (key.contains("PAYMENT")) return "payment";
-        if (key.contains("MANAGE")) return "manage";
-        if (key.contains("LOOKUP")) return "search";
-        if (key.contains("ISSUE")) return "invoice";
-        if (key.contains("PAYROLL")) return "salary";
+        if (key.contains("ATTENDANCE")) {
+            return "checklist";
+        }
+
+        if (key.contains("GRADE")) {
+            return "grade";
+        }
+
+        if (key.contains("ACADEMIC") || key.contains("REPORT")) {
+            return "report";
+        }
+
+        if (key.contains("PROFILE")) {
+            return "profile";
+        }
+
+        if (key.contains("ASSIGN")) {
+            return "assign";
+        }
+
+        if (key.contains("SUBJECT")) {
+            return "book";
+        }
+
+        if (key.contains("CLASS_MGR") || label.contains("quản lý lớp")) {
+            return "classroom";
+        }
+
+        if (key.contains("ENROLL") || label.contains("xếp lớp")) {
+            return "enroll";
+        }
+
+        if (key.contains("PAYMENT")) {
+            return "payment";
+        }
+
+        if (key.contains("MANAGE")) {
+            return "manage";
+        }
+
+        if (key.contains("LOOKUP")) {
+            return "search";
+        }
+
+        if (key.contains("ISSUE")) {
+            return "invoice";
+        }
+
+        if (key.contains("PAYROLL")) {
+            return "salary";
+        }
 
         return "dot";
     }
-
     private static class SidebarEdgeToggleButton extends JButton {
         private boolean hovered = false;
         private boolean pressed = false;
@@ -896,8 +1233,7 @@ public class LoginUI extends JFrame {
                 tabColor = Color.decode("#0891B2");
             }
 
-            // Notch nằm sát cạnh phải sidebar, giống các dashboard web hiện đại.
-            java.awt.geom.Path2D tab = new java.awt.geom.Path2D.Double();
+            Path2D tab = new Path2D.Double();
             tab.moveTo(w, y);
             tab.lineTo(7, y);
             tab.quadTo(0, y, 0, y + 8);
@@ -921,174 +1257,16 @@ public class LoginUI extends JFrame {
             int cy = y + tabH / 2;
 
             if (collapsed) {
-                // Mở rộng: mũi tên sang phải.
                 g2.drawLine(cx - 3, cy - 6, cx + 3, cy);
                 g2.drawLine(cx - 3, cy + 6, cx + 3, cy);
             } else {
-                // Thu gọn: mũi tên sang trái.
                 g2.drawLine(cx + 3, cy - 6, cx - 3, cy);
                 g2.drawLine(cx + 3, cy + 6, cx - 3, cy);
             }
 
-            // Dot nhỏ tăng khả năng nhận biết đây là tay nắm kéo/mở.
             g2.fillOval(cx - 1, cy - 1, 2, 2);
 
             g2.dispose();
-        }
-    }
-
-    private static class SocialLoginButton extends JButton {
-        private final String iconText;
-        private final String labelText;
-        private Color bgColor;
-        private Color textColor;
-        private Color borderColor;
-        private Color iconColor = Color.WHITE;
-        private Color iconBackground = Color.decode("#F8FAFC");
-        private boolean hovered = false;
-        private boolean pressed = false;
-        private boolean compactMode = false;
-
-        SocialLoginButton(String iconText, String labelText, Color bgColor, Color textColor, Color borderColor) {
-            super("");
-            this.iconText = iconText;
-            this.labelText = labelText;
-            this.bgColor = bgColor;
-            this.textColor = textColor;
-            this.borderColor = borderColor;
-
-            setPreferredSize(new Dimension(228, 42));
-            setMaximumSize(new Dimension(228, 42));
-            setMinimumSize(new Dimension(190, 42));
-            setFocusPainted(false);
-            setBorderPainted(false);
-            setContentAreaFilled(false);
-            setOpaque(false);
-            setCursor(new Cursor(Cursor.HAND_CURSOR));
-            setToolTipText(labelText);
-
-            addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseEntered(MouseEvent e) {
-                    hovered = true;
-                    repaint();
-                }
-
-                @Override
-                public void mouseExited(MouseEvent e) {
-                    hovered = false;
-                    pressed = false;
-                    repaint();
-                }
-
-                @Override
-                public void mousePressed(MouseEvent e) {
-                    if (SwingUtilities.isLeftMouseButton(e)) {
-                        pressed = true;
-                        repaint();
-                    }
-                }
-
-                @Override
-                public void mouseReleased(MouseEvent e) {
-                    if (SwingUtilities.isLeftMouseButton(e)) {
-                        pressed = false;
-                        repaint();
-                    }
-                }
-            });
-        }
-
-        void setIconColor(Color iconColor) {
-            this.iconColor = iconColor;
-        }
-
-        void setIconBackground(Color iconBackground) {
-            this.iconBackground = iconBackground;
-        }
-
-        void setCompactMode(boolean compactMode) {
-            this.compactMode = compactMode;
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-
-            int arc = compactMode ? 28 : 30;
-            Color currentBg = bgColor;
-
-            if (pressed) {
-                currentBg = darken(bgColor, 0.06f);
-            } else if (hovered) {
-                currentBg = lighten(bgColor, 0.04f);
-            }
-
-            // Shadow nhẹ kiểu pill button website.
-            if (compactMode) {
-                g2.setColor(new Color(15, 23, 42, hovered ? 26 : 16));
-                g2.fillRoundRect(1, 2, getWidth() - 3, getHeight() - 3, arc, arc);
-            }
-
-            g2.setColor(currentBg);
-            g2.fillRoundRect(0, 0, getWidth() - 2, getHeight() - 3, arc, arc);
-
-            g2.setColor(hovered ? darken(borderColor, 0.10f) : borderColor);
-            g2.setStroke(new BasicStroke(1.2f));
-            g2.drawRoundRect(0, 0, getWidth() - 2, getHeight() - 3, arc, arc);
-
-            int iconSize = compactMode ? 24 : 24;
-            int iconX = compactMode ? 16 : 22;
-            int iconY = (getHeight() - iconSize) / 2 - 1;
-
-            Color actualIconBg = iconBackground;
-            if (bgColor.equals(Color.WHITE) && iconBackground.equals(Color.decode("#F8FAFC"))) {
-                actualIconBg = Color.WHITE;
-            }
-
-            g2.setColor(actualIconBg);
-            g2.fillOval(iconX, iconY, iconSize, iconSize);
-
-            g2.setColor(iconColor);
-            Font iconFont = new Font("Segoe UI", Font.BOLD, iconText.equals("f") ? 17 : 15);
-            g2.setFont(iconFont);
-            FontMetrics ifm = g2.getFontMetrics();
-            int ix = iconX + (iconSize - ifm.stringWidth(iconText)) / 2;
-            int iy = iconY + (iconSize - ifm.getHeight()) / 2 + ifm.getAscent();
-            g2.drawString(iconText, ix, iy);
-
-            g2.setColor(textColor);
-            Font labelFont = new Font("Segoe UI", Font.BOLD, compactMode ? 12 : 14);
-            g2.setFont(labelFont);
-            FontMetrics lfm = g2.getFontMetrics();
-
-            String shown = labelText;
-            int textX = iconX + iconSize + 9;
-            int maxWidth = getWidth() - textX - 10;
-            while (lfm.stringWidth(shown) > maxWidth && shown.length() > 4) {
-                shown = shown.substring(0, shown.length() - 4) + "...";
-            }
-
-            int textY = (getHeight() - lfm.getHeight()) / 2 + lfm.getAscent() - 1;
-            g2.drawString(shown, textX, textY);
-
-            g2.dispose();
-        }
-
-        private Color darken(Color color, float fraction) {
-            int r = Math.max(0, Math.round(color.getRed() * (1 - fraction)));
-            int g = Math.max(0, Math.round(color.getGreen() * (1 - fraction)));
-            int b = Math.max(0, Math.round(color.getBlue() * (1 - fraction)));
-            return new Color(r, g, b);
-        }
-
-        private Color lighten(Color color, float fraction) {
-            int r = Math.min(255, Math.round(color.getRed() + (255 - color.getRed()) * fraction));
-            int g = Math.min(255, Math.round(color.getGreen() + (255 - color.getGreen()) * fraction));
-            int b = Math.min(255, Math.round(color.getBlue() + (255 - color.getBlue()) * fraction));
-            return new Color(r, g, b);
         }
     }
 
@@ -1366,6 +1544,25 @@ public class LoginUI extends JFrame {
                     g2.drawLine(x + 11, y + 19, x + 16, y + 19);
                     break;
 
+                case "classroom":
+                    g2.drawRoundRect(x + 5, y + 7, 18, 12, 3, 3);
+                    g2.drawLine(x + 8, y + 11, x + 20, y + 11);
+                    g2.drawLine(x + 8, y + 15, x + 17, y + 15);
+                    g2.drawLine(cx, y + 19, cx, y + 23);
+                    g2.drawLine(x + 10, y + 23, x + 18, y + 23);
+                    break;
+
+                case "enroll":
+                    g2.drawOval(x + 6, y + 7, 7, 7);
+                    g2.drawArc(x + 4, y + 14, 11, 8, 0, 180);
+                    g2.drawRoundRect(x + 15, y + 8, 8, 12, 2, 2);
+                    g2.drawLine(x + 17, y + 12, x + 21, y + 12);
+                    g2.drawLine(x + 17, y + 16, x + 21, y + 16);
+                    g2.drawLine(x + 11, y + 18, x + 17, y + 18);
+                    g2.drawLine(x + 15, y + 15, x + 18, y + 18);
+                    g2.drawLine(x + 15, y + 21, x + 18, y + 18);
+                    break;
+
                 case "payment":
                     g2.drawRoundRect(x + 5, y + 9, 18, 12, 3, 3);
                     g2.drawLine(x + 5, y + 13, x + 23, y + 13);
@@ -1453,11 +1650,9 @@ public class LoginUI extends JFrame {
             int w = getWidth();
             int h = getHeight();
 
-            // Nền bo góc nhẹ giống icon account trên website hiện đại.
             g2.setColor(Color.decode("#F8FAFC"));
             g2.fillRoundRect(0, 0, w, h, 10, 10);
 
-            // Icon user silhouette theo mẫu người dùng gợi ý.
             g2.setColor(Color.decode("#111827"));
 
             int headSize = 10;
@@ -1470,7 +1665,7 @@ public class LoginUI extends JFrame {
             int bodyX = (w - bodyW) / 2;
             int bodyY = 18;
 
-            java.awt.geom.Path2D body = new java.awt.geom.Path2D.Double();
+            Path2D body = new Path2D.Double();
             body.moveTo(bodyX + bodyW / 2.0, bodyY - 2);
             body.curveTo(bodyX + 4, bodyY, bodyX + 2, bodyY + 5, bodyX + 1, bodyY + bodyH - 2);
             body.quadTo(bodyX + 1, bodyY + bodyH, bodyX + 4, bodyY + bodyH);

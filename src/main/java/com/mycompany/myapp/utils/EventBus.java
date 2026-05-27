@@ -1,23 +1,33 @@
 package com.mycompany.myapp.utils;
 
-import java.util.ArrayList;
+import javax.swing.SwingUtilities;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class EventBus {
+
     public interface AttendanceListener {
         void onAttendanceSuccess(int studentId, String status);
     }
 
-    private static final List<AttendanceListener> listeners = new ArrayList<>();
+    private static final List<AttendanceListener> listeners = new CopyOnWriteArrayList<>();
 
-    public static synchronized void register(AttendanceListener listener) {
-        if (!listeners.contains(listener)) listeners.add(listener);
+    private EventBus() {
     }
 
-    // Phải là public static synchronized void
-    public static synchronized void publish(int studentId, String status) {
+    public static void register(AttendanceListener listener) {
+        if (listener != null && !listeners.contains(listener)) {
+            listeners.add(listener);
+        }
+    }
+
+    public static void unregister(AttendanceListener listener) {
+        listeners.remove(listener);
+    }
+
+    public static void publish(int studentId, String status) {
         for (AttendanceListener listener : listeners) {
-            listener.onAttendanceSuccess(studentId, status);
+            SwingUtilities.invokeLater(() -> listener.onAttendanceSuccess(studentId, status));
         }
     }
 }

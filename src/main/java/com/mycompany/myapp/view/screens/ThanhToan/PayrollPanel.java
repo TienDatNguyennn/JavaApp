@@ -12,44 +12,75 @@ import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Màn hình tính lương nhân viên.
+ *
+ * Lưu ý:
+ * - Trong database vẫn dùng mã nội bộ: TEACHER, OFFICE.
+ * - Trên giao diện chỉ hiển thị tiếng Việt:
+ *   + TEACHER -> Giáo viên
+ *   + OFFICE  -> Nhân viên giáo vụ
+ */
 public class PayrollPanel extends JPanel {
 
     private static final Color PRIMARY   = new Color(108, 92, 231);
     private static final Color BG_PAGE   = new Color(248, 249, 250);
     private static final Color BG_CARD   = Color.WHITE;
     private static final Color BORDER_C  = new Color(222, 226, 230);
-    private static final Color TEXT_MAIN = new Color(33,  37,  41);
+    private static final Color TEXT_MAIN = new Color(33, 37, 41);
     private static final Color TEXT_MUTE = new Color(108, 117, 125);
-    private static final Color SUCCESS   = new Color(25,  135, 84);
+    private static final Color SUCCESS   = new Color(25, 135, 84);
+    private static final Color WARNING   = new Color(255, 159, 67);
+    private static final Color DANGER    = new Color(238, 82, 83);
+
+    private static final String STAFF_ALL_DISPLAY     = "Tất cả";
+    private static final String STAFF_TEACHER_DISPLAY = "Giáo viên";
+    private static final String STAFF_OFFICE_DISPLAY  = "Nhân viên giáo vụ";
+
+    private static final String STAFF_TEACHER_CODE = "TEACHER";
+    private static final String STAFF_OFFICE_CODE  = "OFFICE";
 
     private final FinanceController ctrl = new FinanceController();
     private final NumberFormat nf = NumberFormat.getNumberInstance(new Locale("vi", "VN"));
 
-    private JTextField txtFilterPeriod, txtSearchName;
+    private JTextField txtFilterPeriod;
+    private JTextField txtSearchName;
     private JComboBox<String> cmbStaffType;
-    private JLabel lblTotalSalary, lblCountTeacher, lblCountOffice, lblCountPending;
+
+    private JLabel lblTotalSalary;
+    private JLabel lblCountTeacher;
+    private JLabel lblCountOffice;
+    private JLabel lblCountPending;
 
     private DefaultTableModel tableModel;
     private JTable tblPayroll;
 
-    private JTextField txtUserId, txtAddPeriod, txtBasic, txtTeaching, txtBonus;
+    private JTextField txtUserId;
+    private JTextField txtAddPeriod;
+    private JTextField txtBasic;
+    private JTextField txtTeaching;
+    private JTextField txtBonus;
     private JComboBox<String> cmbAddType;
     private JLabel lblTotalValue;
-    private CustomButton btnEdit, btnDelete;
+
+    private CustomButton btnEdit;
+    private CustomButton btnDelete;
 
     public PayrollPanel() {
         setLayout(new BorderLayout(0, 0));
         setBackground(BG_PAGE);
         setBorder(new EmptyBorder(20, 24, 20, 24));
-        add(buildHeader(),  BorderLayout.NORTH);
+
+        add(buildHeader(), BorderLayout.NORTH);
         add(buildContent(), BorderLayout.CENTER);
+
         loadData();
     }
 
     private JPanel buildHeader() {
-        JPanel p = new JPanel(new BorderLayout());
-        p.setOpaque(false);
-        p.setBorder(new EmptyBorder(0, 0, 16, 0));
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+        panel.setBorder(new EmptyBorder(0, 0, 16, 0));
 
         JLabel title = new JLabel("Tính lương nhân viên");
         title.setFont(new Font("Segoe UI", Font.BOLD, 20));
@@ -65,26 +96,34 @@ public class PayrollPanel extends JPanel {
         left.add(title);
         left.add(Box.createVerticalStrut(3));
         left.add(sub);
-        p.add(left, BorderLayout.WEST);
-        return p;
+
+        panel.add(left, BorderLayout.WEST);
+        return panel;
     }
 
     private JPanel buildContent() {
-        JPanel p = new JPanel(new BorderLayout(0, 14));
-        p.setOpaque(false);
-        p.add(buildMetrics(), BorderLayout.NORTH);
+        JPanel panel = new JPanel(new BorderLayout(0, 14));
+        panel.setOpaque(false);
 
-        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, buildTableCard(), buildAddCard());
+        panel.add(buildMetrics(), BorderLayout.NORTH);
+
+        JSplitPane split = new JSplitPane(
+                JSplitPane.HORIZONTAL_SPLIT,
+                buildTableCard(),
+                buildAddCard()
+        );
         split.setResizeWeight(0.72);
         split.setDividerSize(8);
         split.setBorder(null);
-        p.add(split, BorderLayout.CENTER);
-        return p;
+
+        panel.add(split, BorderLayout.CENTER);
+        return panel;
     }
 
     private JPanel buildMetrics() {
         JPanel row = new JPanel(new GridLayout(1, 4, 12, 0));
         row.setOpaque(false);
+
         lblTotalSalary  = new JLabel("—");
         lblCountTeacher = new JLabel("—");
         lblCountOffice  = new JLabel("—");
@@ -94,72 +133,122 @@ public class PayrollPanel extends JPanel {
         row.add(metricCard("Giáo viên", lblCountTeacher, new Color(13, 110, 253)));
         row.add(metricCard("Nhân viên giáo vụ", lblCountOffice, new Color(102, 16, 242)));
         row.add(metricCard("Chờ nhập", lblCountPending, new Color(253, 126, 20)));
+
         return row;
     }
 
-    private JPanel metricCard(String title, JLabel val, Color accent) {
+    private JPanel metricCard(String title, JLabel valueLabel, Color accent) {
         JPanel card = new JPanel(new BorderLayout(0, 6));
         card.setBackground(BG_CARD);
-        card.setBorder(new CompoundBorder(new LineBorder(BORDER_C, 1, true), new EmptyBorder(14, 16, 14, 16)));
-        JLabel lTitle = new JLabel(title);
-        lTitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lTitle.setForeground(TEXT_MUTE);
-        val.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        val.setForeground(accent);
-        card.add(lTitle, BorderLayout.NORTH);
-        card.add(val, BorderLayout.CENTER);
+        card.setBorder(new CompoundBorder(
+                new LineBorder(BORDER_C, 1, true),
+                new EmptyBorder(14, 16, 14, 16)
+        ));
+
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        titleLabel.setForeground(TEXT_MUTE);
+
+        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        valueLabel.setForeground(accent);
+
+        card.add(titleLabel, BorderLayout.NORTH);
+        card.add(valueLabel, BorderLayout.CENTER);
+
         return card;
     }
 
     private JPanel buildTableCard() {
         JPanel card = new JPanel(new BorderLayout(0, 12));
         card.setBackground(BG_CARD);
-        card.setBorder(new CompoundBorder(new LineBorder(BORDER_C, 1, true), new EmptyBorder(16, 16, 16, 16)));
+        card.setBorder(new CompoundBorder(
+                new LineBorder(BORDER_C, 1, true),
+                new EmptyBorder(16, 16, 16, 16)
+        ));
+
         card.add(buildTableToolbar(), BorderLayout.NORTH);
         card.add(buildTable(), BorderLayout.CENTER);
+
         return card;
     }
 
     private JPanel buildTableToolbar() {
         JPanel bar = new JPanel(new BorderLayout());
         bar.setOpaque(false);
+
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         right.setOpaque(false);
 
         txtFilterPeriod = new JTextField("05/2026", 7);
-        cmbStaffType = new JComboBox<>(new String[]{"Tất cả","TEACHER","OFFICE"});
+        txtFilterPeriod.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+
+        cmbStaffType = new JComboBox<>(new String[]{
+                STAFF_ALL_DISPLAY,
+                STAFF_TEACHER_DISPLAY,
+                STAFF_OFFICE_DISPLAY
+        });
+        cmbStaffType.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+
         txtSearchName = new JTextField(10);
+        txtSearchName.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
         CustomButton btnLoad = new CustomButton("Lọc");
         btnLoad.setColors(PRIMARY, PRIMARY.darker());
         btnLoad.addActionListener(e -> loadData());
 
         btnEdit = new CustomButton("Sửa");
-        btnEdit.setColors(new Color(255, 159, 67), new Color(255, 159, 67).darker());
+        btnEdit.setColors(WARNING, WARNING.darker());
         btnEdit.addActionListener(e -> prepareEdit());
 
         btnDelete = new CustomButton("Xóa");
-        btnDelete.setColors(new Color(238, 82, 83), new Color(194, 54, 22));
+        btnDelete.setColors(DANGER, new Color(194, 54, 22));
         btnDelete.addActionListener(e -> deletePayroll());
 
         right.add(btnEdit);
         right.add(btnDelete);
         right.add(new JLabel("Kỳ:"));
         right.add(txtFilterPeriod);
+        right.add(new JLabel("Loại:"));
         right.add(cmbStaffType);
         right.add(new JLabel("Tên:"));
         right.add(txtSearchName);
         right.add(btnLoad);
+
         bar.add(right, BorderLayout.EAST);
         return bar;
     }
 
     private JScrollPane buildTable() {
-        tableModel = new DefaultTableModel(new String[]{"Mã NV", "Nhân viên", "Loại", "Cơ bản", "Giảng dạy", "Thưởng", "Thực lĩnh"}, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+        tableModel = new DefaultTableModel(
+                new String[]{
+                        "Mã NV",
+                        "Nhân viên",
+                        "Loại nhân viên",
+                        "Lương cơ bản",
+                        "Phí giảng dạy",
+                        "Thưởng",
+                        "Thực lĩnh"
+                },
+                0
+        ) {
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
+
         tblPayroll = new JTable(tableModel);
         tblPayroll.setRowHeight(35);
+        tblPayroll.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        tblPayroll.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        tblPayroll.getTableHeader().setBackground(new Color(241, 243, 245));
+        tblPayroll.getTableHeader().setForeground(TEXT_MAIN);
+        tblPayroll.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tblPayroll.setSelectionBackground(new Color(232, 228, 252));
+        tblPayroll.setSelectionForeground(TEXT_MAIN);
+        tblPayroll.setGridColor(new Color(233, 236, 239));
+        tblPayroll.setShowVerticalLines(false);
+
         return new JScrollPane(tblPayroll);
     }
 
@@ -167,221 +256,382 @@ public class PayrollPanel extends JPanel {
         JPanel card = new JPanel();
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBackground(BG_CARD);
-        card.setBorder(new CompoundBorder(new LineBorder(BORDER_C, 1, true), new EmptyBorder(16, 16, 16, 16)));
+        card.setBorder(new CompoundBorder(
+                new LineBorder(BORDER_C, 1, true),
+                new EmptyBorder(16, 16, 16, 16)
+        ));
 
-        JLabel title = new JLabel("Nhập/Sửa lương");
+        JLabel title = new JLabel("Nhập / sửa lương");
         title.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        card.add(title); addGap(card, 15);
+        title.setForeground(TEXT_MAIN);
+        card.add(title);
+        addGap(card, 15);
 
-        addFormLabel(card, "Mã nhân viên (User ID)");
-        txtUserId = styledField(""); card.add(txtUserId); addGap(card, 10);
+        addFormLabel(card, "Mã nhân viên");
+        txtUserId = styledField("");
+        card.add(txtUserId);
+        addGap(card, 10);
 
         addFormLabel(card, "Kỳ lương (MM/yyyy)");
-        txtAddPeriod = styledField("05/2026"); card.add(txtAddPeriod); addGap(card, 10);
+        txtAddPeriod = styledField("05/2026");
+        card.add(txtAddPeriod);
+        addGap(card, 10);
 
-        addFormLabel(card, "Loại");
-        cmbAddType = new JComboBox<>(new String[]{"TEACHER", "OFFICE"});
+        addFormLabel(card, "Loại nhân viên");
+        cmbAddType = new JComboBox<>(new String[]{
+                STAFF_TEACHER_DISPLAY,
+                STAFF_OFFICE_DISPLAY
+        });
+        cmbAddType.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         cmbAddType.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
-        card.add(cmbAddType); addGap(card, 10);
+        card.add(cmbAddType);
+        addGap(card, 10);
 
         addFormLabel(card, "Lương cơ bản");
-        txtBasic = styledField("0"); card.add(txtBasic); addGap(card, 10);
+        txtBasic = styledField("0");
+        card.add(txtBasic);
+        addGap(card, 10);
 
         addFormLabel(card, "Phí giảng dạy");
-        txtTeaching = styledField("0"); card.add(txtTeaching); addGap(card, 10);
+        txtTeaching = styledField("0");
+        card.add(txtTeaching);
+        addGap(card, 10);
 
         addFormLabel(card, "Thưởng");
-        txtBonus = styledField("0"); card.add(txtBonus); addGap(card, 10);
+        txtBonus = styledField("0");
+        card.add(txtBonus);
+        addGap(card, 10);
 
         lblTotalValue = new JLabel("0đ");
         lblTotalValue.setFont(new Font("Segoe UI", Font.BOLD, 15));
         lblTotalValue.setForeground(PRIMARY);
-        JPanel pTotal = new JPanel(new BorderLayout());
-        pTotal.setOpaque(false);
-        pTotal.add(new JLabel("Tổng tính toán: "), BorderLayout.WEST);
-        pTotal.add(lblTotalValue, BorderLayout.EAST);
-        card.add(pTotal); addGap(card, 15);
 
-        javax.swing.event.DocumentListener dl = new javax.swing.event.DocumentListener() {
+        JPanel totalPanel = new JPanel(new BorderLayout());
+        totalPanel.setOpaque(false);
+        totalPanel.add(new JLabel("Tổng thực lĩnh:"), BorderLayout.WEST);
+        totalPanel.add(lblTotalValue, BorderLayout.EAST);
+        card.add(totalPanel);
+        addGap(card, 15);
+
+        javax.swing.event.DocumentListener documentListener = new javax.swing.event.DocumentListener() {
             public void insertUpdate(javax.swing.event.DocumentEvent e) { recalc(lblTotalValue); }
             public void removeUpdate(javax.swing.event.DocumentEvent e) { recalc(lblTotalValue); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e){ recalc(lblTotalValue); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { recalc(lblTotalValue); }
         };
-        txtBasic.getDocument().addDocumentListener(dl);
-        txtTeaching.getDocument().addDocumentListener(dl);
-        txtBonus.getDocument().addDocumentListener(dl);
 
-      // ── KHU VỰC NÚT BẤM CHỨC NĂNG: LÀM MỚI & LƯU (SỬA ĐỔI) ──
-        JPanel pButtons = new JPanel(new GridLayout(1, 2, 8, 0));
-        pButtons.setOpaque(false);
-        pButtons.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        txtBasic.getDocument().addDocumentListener(documentListener);
+        txtTeaching.getDocument().addDocumentListener(documentListener);
+        txtBonus.getDocument().addDocumentListener(documentListener);
 
-        // 1. Tạo nút Làm mới
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 8, 0));
+        buttonPanel.setOpaque(false);
+        buttonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+
         CustomButton btnReset = new CustomButton("Làm mới");
-        btnReset.setColors(new Color(108, 117, 125), new Color(108, 117, 125).darker()); // Màu xám nhạt chuyên nghiệp
+        btnReset.setColors(new Color(108, 117, 125), new Color(108, 117, 125).darker());
         btnReset.addActionListener(e -> clearForm());
 
-        // 2. Tạo nút Lưu
         CustomButton btnSave = new CustomButton("Lưu lương");
         btnSave.setColors(SUCCESS, SUCCESS.darker());
         btnSave.addActionListener(e -> savePayroll());
 
-        // Thêm các nút vào hàng và đưa vào Card form
-        pButtons.add(btnReset);
-        pButtons.add(btnSave);
-        card.add(pButtons);
-        // ────────────────────────────────────────────────────────
+        buttonPanel.add(btnReset);
+        buttonPanel.add(btnSave);
+        card.add(buttonPanel);
 
         return card;
     }
 
-    // --- LOGIC FUNCTIONS ---
-// Hàm xóa trắng form và đưa về trạng thái ban đầu (BỔ SUNG MỚI)
     private void clearForm() {
         txtUserId.setText("");
-        txtUserId.setEditable(true); // Mở khóa lại ô nhập ID nhân viên
-        txtAddPeriod.setText(txtFilterPeriod.getText()); // Đồng bộ lại kỳ lương theo bộ lọc
-        cmbAddType.setSelectedIndex(0); // Đặt lại loại đầu tiên (TEACHER)
+        txtUserId.setEditable(true);
+        txtUserId.setBackground(Color.WHITE);
+
+        txtAddPeriod.setText(txtFilterPeriod.getText().trim());
+        cmbAddType.setSelectedIndex(0);
+
         txtBasic.setText("0");
         txtTeaching.setText("0");
         txtBonus.setText("0");
         lblTotalValue.setText("0đ");
     }
+
     private void loadData() {
         String period = txtFilterPeriod.getText().trim();
-        String type = cmbStaffType.getSelectedItem().toString();
+        String selectedTypeDisplay = cmbStaffType.getSelectedItem() == null
+                ? STAFF_ALL_DISPLAY
+                : cmbStaffType.getSelectedItem().toString();
+
+        String typeCode = staffDisplayToCodeForFilter(selectedTypeDisplay);
         String keyword = txtSearchName.getText().trim().toLowerCase();
 
-        List<Payroll> list = ctrl.getPayroll(period, type);
-        tableModel.setRowCount(0);
-        double totalSum = 0;
-        int tCount = 0, oCount = 0;
+        List<Payroll> list = ctrl.getPayroll(period, typeCode);
 
-        for (Payroll p : list) {
-            if (!keyword.isEmpty() && !p.getFullName().toLowerCase().contains(keyword)) continue;
+        tableModel.setRowCount(0);
+
+        double totalSum = 0;
+        int teacherCount = 0;
+        int officeCount = 0;
+
+        for (Payroll payroll : list) {
+            String fullName = payroll.getFullName() == null ? "" : payroll.getFullName();
+
+            if (!keyword.isEmpty() && !fullName.toLowerCase().contains(keyword)) {
+                continue;
+            }
+
+            String staffTypeCode = payroll.getStaffType();
+            String staffTypeDisplay = staffCodeToDisplay(staffTypeCode);
+
             tableModel.addRow(new Object[]{
-                p.getUserId(), p.getFullName(), p.getStaffType(),
-                nf.format(p.getBasicSalary()) + "đ",
-                nf.format(p.getTotalTeachingFee()) + "đ",
-                nf.format(p.getBonusAmount()) + "đ",
-                nf.format(p.getTotalNet()) + "đ"
+                    payroll.getUserId(),
+                    fullName,
+                    staffTypeDisplay,
+                    nf.format(payroll.getBasicSalary()) + "đ",
+                    nf.format(payroll.getTotalTeachingFee()) + "đ",
+                    nf.format(payroll.getBonusAmount()) + "đ",
+                    nf.format(payroll.getTotalNet()) + "đ"
             });
-            totalSum += p.getTotalNet();
-            if ("TEACHER".equals(p.getStaffType())) tCount++; else oCount++;
+
+            totalSum += payroll.getTotalNet();
+
+            if (STAFF_TEACHER_CODE.equals(staffTypeCode)) {
+                teacherCount++;
+            } else if (STAFF_OFFICE_CODE.equals(staffTypeCode)) {
+                officeCount++;
+            }
         }
+
         lblTotalSalary.setText(nf.format(totalSum) + "đ");
-        lblCountTeacher.setText(String.valueOf(tCount));
-        lblCountOffice.setText(String.valueOf(oCount));
+        lblCountTeacher.setText(String.valueOf(teacherCount));
+        lblCountOffice.setText(String.valueOf(officeCount));
+        lblCountPending.setText("0");
     }
 
-private void prepareEdit() {
+    private void prepareEdit() {
         int row = tblPayroll.getSelectedRow();
+
         if (row == -1) {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng trong bảng!");
             return;
         }
+
         txtUserId.setText(tableModel.getValueAt(row, 0).toString());
-        txtUserId.setEditable(false); // KHÓA ô nhập mã NV lại, tránh việc sửa nhầm ID gốc
-        
-        txtAddPeriod.setText(txtFilterPeriod.getText());
-        cmbAddType.setSelectedItem(tableModel.getValueAt(row, 2).toString());
-        txtBasic.setText(tableModel.getValueAt(row, 3).toString().replaceAll("[^0-9]", ""));
-        txtTeaching.setText(tableModel.getValueAt(row, 4).toString().replaceAll("[^0-9]", ""));
-        txtBonus.setText(tableModel.getValueAt(row, 5).toString().replaceAll("[^0-9]", ""));
-        JOptionPane.showMessageDialog(this, "Đã chuyển dữ liệu sang form. Hãy sửa và nhấn Lưu.");
+        txtUserId.setEditable(false);
+        txtUserId.setBackground(new Color(241, 243, 245));
+
+        txtAddPeriod.setText(txtFilterPeriod.getText().trim());
+
+        String staffTypeDisplay = tableModel.getValueAt(row, 2).toString();
+        cmbAddType.setSelectedItem(staffTypeDisplay);
+
+        txtBasic.setText(cleanMoney(tableModel.getValueAt(row, 3).toString()));
+        txtTeaching.setText(cleanMoney(tableModel.getValueAt(row, 4).toString()));
+        txtBonus.setText(cleanMoney(tableModel.getValueAt(row, 5).toString()));
+
+        recalc(lblTotalValue);
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Đã chuyển dữ liệu sang form.\nBạn có thể chỉnh sửa và bấm Lưu lương.",
+                "Thông báo",
+                JOptionPane.INFORMATION_MESSAGE
+        );
     }
+
     private void deletePayroll() {
         int row = tblPayroll.getSelectedRow();
+
         if (row == -1) {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn dòng cần xóa!");
             return;
         }
-        int confirm = JOptionPane.showConfirmDialog(this, "Xóa bản ghi này?", "Xác nhận", JOptionPane.YES_NO_OPTION);
+
+        String userId = tableModel.getValueAt(row, 0).toString();
+        String employeeName = tableModel.getValueAt(row, 1).toString();
+        String period = txtFilterPeriod.getText().trim();
+
+        int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Bạn có chắc chắn muốn xóa bản ghi lương này?\n\n"
+                        + "Nhân viên: " + employeeName + "\n"
+                        + "Kỳ lương: " + period,
+                "Xác nhận xóa",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+
         if (confirm == JOptionPane.YES_OPTION) {
-            String uid = tableModel.getValueAt(row, 0).toString();
-            String period = txtFilterPeriod.getText();
-            String res = ctrl.deletePayroll(uid, period); 
-            if ("SUCCESS".equals(res)) {
+            String result = ctrl.deletePayroll(userId, period);
+
+            if ("SUCCESS".equals(result)) {
                 loadData();
-                JOptionPane.showMessageDialog(this, "Đã xóa!");
+                clearForm();
+                JOptionPane.showMessageDialog(this, "Đã xóa bản ghi lương!");
             } else {
-                JOptionPane.showMessageDialog(this, "Lỗi: " + res);
+                JOptionPane.showMessageDialog(this, "Lỗi: " + result);
             }
         }
     }
 
- private void savePayroll() {
+    private void savePayroll() {
         try {
-            // Kiểm tra dữ liệu đầu vào bắt buộc
-            if (txtUserId.getText().trim().isEmpty() || txtAddPeriod.getText().trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ Mã nhân viên và Kỳ lương!");
+            if (txtUserId.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập mã nhân viên!");
+                txtUserId.requestFocus();
                 return;
             }
 
-            Payroll p = new Payroll();
-            p.setUserId(Integer.parseInt(txtUserId.getText().trim()));
-            p.setPayPeriod(txtAddPeriod.getText().trim());
-            p.setStaffType(cmbAddType.getSelectedItem().toString());
-            
+            if (txtAddPeriod.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập kỳ lương!");
+                txtAddPeriod.requestFocus();
+                return;
+            }
+
+            Payroll payroll = new Payroll();
+
+            payroll.setUserId(Integer.parseInt(txtUserId.getText().trim()));
+            payroll.setPayPeriod(txtAddPeriod.getText().trim());
+
+            String staffDisplay = cmbAddType.getSelectedItem() == null
+                    ? STAFF_TEACHER_DISPLAY
+                    : cmbAddType.getSelectedItem().toString();
+
+            payroll.setStaffType(staffDisplayToCodeForSave(staffDisplay));
+
             double basic = parseMoney(txtBasic.getText());
             double teaching = parseMoney(txtTeaching.getText());
             double bonus = parseMoney(txtBonus.getText());
-            
-            // Tính toán tổng số tiền thực nhận (Total Net)
+
+            if (basic < 0 || teaching < 0 || bonus < 0) {
+                JOptionPane.showMessageDialog(this, "Các khoản lương không được âm!");
+                return;
+            }
+
             double totalNet = basic + teaching + bonus;
 
-            p.setBasicSalary(basic);
-            p.setTotalTeachingFee(teaching);
-            p.setBonusAmount(bonus);
-            p.setTotalNet(totalNet); // Đảm bảo dữ liệu Thực lĩnh được đẩy vào DB chính xác
+            payroll.setBasicSalary(basic);
+            payroll.setTotalTeachingFee(teaching);
+            payroll.setBonusAmount(bonus);
+            payroll.setTotalNet(totalNet);
 
-            String res = ctrl.savePayroll(p);
-            if ("SUCCESS".equals(res)) {
+            String result = ctrl.savePayroll(payroll);
+
+            if ("SUCCESS".equals(result)) {
                 loadData();
                 JOptionPane.showMessageDialog(this, "Cập nhật bảng lương thành công!");
-                
-                // Tùy chọn: Cho phép nhập tiếp mã khác bằng cách làm sạch form hoặc mở lại edit
-               if ("SUCCESS".equals(res)) {
-                loadData();
-                JOptionPane.showMessageDialog(this, "Cập nhật bảng lương thành công!");
-                clearForm(); // Tự động đưa form về ban đầu sau khi lưu thành công
-            }
+                clearForm();
             } else {
-                JOptionPane.showMessageDialog(this, "Lỗi: " + res);
+                JOptionPane.showMessageDialog(this, "Lỗi: " + result);
             }
+
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "Mã nhân viên phải là số nguyên!");
+            txtUserId.requestFocus();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Lỗi nhập liệu: " + ex.getMessage());
         }
     }
+
     private void recalc(JLabel lblTotal) {
-        try {
-            double sum = parseMoney(txtBasic.getText()) + parseMoney(txtTeaching.getText()) + parseMoney(txtBonus.getText());
-            lblTotal.setText(nf.format(sum) + "đ");
-        } catch (Exception ignored) { lblTotal.setText("0đ"); }
+        double sum = parseMoney(txtBasic.getText())
+                + parseMoney(txtTeaching.getText())
+                + parseMoney(txtBonus.getText());
+
+        lblTotal.setText(nf.format(sum) + "đ");
     }
 
     private double parseMoney(String input) {
-        if (input == null || input.trim().isEmpty()) return 0;
-        try { return Double.parseDouble(input.trim().replaceAll("[^0-9]", "")); } 
-        catch (Exception e) { return 0; }
+        if (input == null || input.trim().isEmpty()) {
+            return 0;
+        }
+
+        try {
+            String clean = cleanMoney(input);
+
+            if (clean.isEmpty()) {
+                return 0;
+            }
+
+            return Double.parseDouble(clean);
+
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private String cleanMoney(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return value.replaceAll("[^0-9]", "");
+    }
+
+    /**
+     * Dùng cho combobox lọc.
+     * - Tất cả -> truyền null để lấy toàn bộ.
+     * - Giáo viên -> TEACHER.
+     * - Nhân viên giáo vụ -> OFFICE.
+     */
+    private String staffDisplayToCodeForFilter(String display) {
+        if (STAFF_TEACHER_DISPLAY.equals(display)) {
+            return STAFF_TEACHER_CODE;
+        }
+
+        if (STAFF_OFFICE_DISPLAY.equals(display)) {
+            return STAFF_OFFICE_CODE;
+        }
+
+        return null;
+    }
+
+    /**
+     * Dùng khi lưu xuống database.
+     * Database vẫn giữ mã ổn định TEACHER/OFFICE.
+     */
+    private String staffDisplayToCodeForSave(String display) {
+        if (STAFF_OFFICE_DISPLAY.equals(display)) {
+            return STAFF_OFFICE_CODE;
+        }
+
+        return STAFF_TEACHER_CODE;
+    }
+
+    /**
+     * Dùng khi hiển thị từ database lên giao diện.
+     */
+    private String staffCodeToDisplay(String code) {
+        if (STAFF_TEACHER_CODE.equals(code)) {
+            return STAFF_TEACHER_DISPLAY;
+        }
+
+        if (STAFF_OFFICE_CODE.equals(code)) {
+            return STAFF_OFFICE_DISPLAY;
+        }
+
+        return code == null ? "" : code;
     }
 
     private void addFormLabel(JPanel card, String text) {
-        JLabel l = new JLabel(text);
-        l.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        l.setForeground(TEXT_MUTE);
-        card.add(l);
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        label.setForeground(TEXT_MUTE);
+        card.add(label);
     }
 
-    private void addGap(JPanel card, int h) { card.add(Box.createVerticalStrut(h)); }
-
-    private JTextField styledField(String def) {
-        JTextField f = new JTextField(def);
-        f.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
-        f.setBorder(new CompoundBorder(new LineBorder(BORDER_C, 1, true), new EmptyBorder(4, 8, 4, 8)));
-        return f;
+    private void addGap(JPanel card, int height) {
+        card.add(Box.createVerticalStrut(height));
     }
-    
+
+    private JTextField styledField(String defaultText) {
+        JTextField field = new JTextField(defaultText);
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+        field.setBorder(new CompoundBorder(
+                new LineBorder(BORDER_C, 1, true),
+                new EmptyBorder(4, 8, 4, 8)
+        ));
+        return field;
+    }
 }

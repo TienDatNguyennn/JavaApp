@@ -15,30 +15,41 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.text.ParseException;
 import java.util.List;
 import java.util.regex.Pattern;
 
 public class SystemConfigUI extends JPanel {
 
+    // ── Quy tắc validate dùng chung ──
+    private static final int MIN_ROOM_CAPACITY = 1;
+    private static final int MAX_ROOM_CAPACITY = 500;
+    private static final int MIN_ROOM_FLOOR = 1;
+    private static final int MAX_ROOM_FLOOR = 30;
+    private static final int MIN_DISCOUNT_RATE = 0;
+    private static final int MAX_DISCOUNT_RATE = 100;
+    private static final int MIN_SUBJECTS = 1;
+    private static final int MAX_SUBJECTS = 20;
+    private static final String PROMO_FIX_VERSION = "PROMO_FIX_TEXTFIELD_VALIDATE_0_100";
+
     // ── DAO ──
-    private final RoomDAO      roomDAO  = new RoomDAO();
+    private final RoomDAO roomDAO = new RoomDAO();
     private final PromotionDAO promoDAO = new PromotionDAO();
 
     // ── Tab 1: Room ──
-    private DefaultTableModel          roomModel;
-    private JTable                     roomTable;
+    private DefaultTableModel roomModel;
+    private JTable roomTable;
     private TableRowSorter<DefaultTableModel> roomSorter;
-    private JTextField                 txtRoomSearch;
+    private JTextField txtRoomSearch;
 
     // ── Tab 2: Promotion ──
-    private DefaultTableModel          promoModel;
-    private JTable                     promoTable;
+    private DefaultTableModel promoModel;
+    private JTable promoTable;
 
     // ── Status labels ──
     private JLabel lblRoomStatus;
     private JLabel lblPromoStatus;
 
-    // ════════════════════════════════════════════════════════
     public SystemConfigUI() {
         setLayout(new BorderLayout());
         setBackground(new Color(245, 246, 250));
@@ -49,10 +60,10 @@ public class SystemConfigUI extends JPanel {
         tabs.setForeground(new Color(45, 52, 54));
         tabs.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        tabs.addTab("  Quản Lý Phòng Học  ",      createRoomPanel());
-        tabs.addTab("  Cấu Hình Khuyến Mãi  ",    createPromotionPanel());
-        tabs.addTab("  Quản Lý Nhân Sự  ",        new PersonnelManagementPanel());
-        tabs.addTab("  Sao Lưu & Phục Hồi  ",     createBackupPanel());
+        tabs.addTab("  Quản Lý Phòng Học  ", createRoomPanel());
+        tabs.addTab("  Cấu Hình Khuyến Mãi  ", createPromotionPanel());
+        tabs.addTab("  Quản Lý Nhân Sự  ", new PersonnelManagementPanel());
+        tabs.addTab("  Sao Lưu & Phục Hồi  ", createBackupPanel());
 
         add(tabs, BorderLayout.CENTER);
 
@@ -68,7 +79,6 @@ public class SystemConfigUI extends JPanel {
         panel.setBackground(Color.WHITE);
         panel.setBorder(new EmptyBorder(25, 30, 30, 30));
 
-        // ── Header ──
         JPanel headerPanel = new JPanel(new BorderLayout(0, 12));
         headerPanel.setOpaque(false);
 
@@ -82,10 +92,9 @@ public class SystemConfigUI extends JPanel {
 
         JPanel titleRow = new JPanel(new BorderLayout());
         titleRow.setOpaque(false);
-        titleRow.add(lblTitle,     BorderLayout.WEST);
+        titleRow.add(lblTitle, BorderLayout.WEST);
         titleRow.add(lblRoomStatus, BorderLayout.EAST);
 
-        // ── Action bar ──
         JPanel actionPanel = new JPanel(new BorderLayout());
         actionPanel.setOpaque(false);
 
@@ -95,18 +104,17 @@ public class SystemConfigUI extends JPanel {
         txtRoomSearch.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         txtRoomSearch.setPreferredSize(new Dimension(260, 38));
         txtRoomSearch.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(200, 200, 200)),
-            new EmptyBorder(0, 10, 0, 10)));
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                new EmptyBorder(0, 10, 0, 10)));
         txtRoomSearch.setToolTipText("Tìm theo tên phòng, tầng, loại...");
 
         RoundedButton btnSearch = new RoundedButton("Tìm", "#F1F2F6", "#2D3436", 12);
         btnSearch.addActionListener(e -> filterRoomTable());
 
-        // Realtime search
         txtRoomSearch.getDocument().addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent e) { filterRoomTable(); }
-            public void insertUpdate(DocumentEvent e)  { filterRoomTable(); }
-            public void removeUpdate(DocumentEvent e)  { filterRoomTable(); }
+            public void insertUpdate(DocumentEvent e) { filterRoomTable(); }
+            public void removeUpdate(DocumentEvent e) { filterRoomTable(); }
         });
 
         searchPanel.add(txtRoomSearch);
@@ -115,20 +123,19 @@ public class SystemConfigUI extends JPanel {
 
         JPanel btnGroup = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         btnGroup.setOpaque(false);
-        RoundedButton btnAdd    = new RoundedButton("Thêm Phòng", "#3498DB", "#FFFFFF", 12);
-        RoundedButton btnEdit   = new RoundedButton("Sửa",        "#F39C12", "#FFFFFF", 12);
-        RoundedButton btnDelete = new RoundedButton("Xóa",        "#E74C3C", "#FFFFFF", 12);
+        RoundedButton btnAdd = new RoundedButton("Thêm Phòng", "#3498DB", "#FFFFFF", 12);
+        RoundedButton btnEdit = new RoundedButton("Sửa", "#F39C12", "#FFFFFF", 12);
+        RoundedButton btnDelete = new RoundedButton("Xóa", "#E74C3C", "#FFFFFF", 12);
         btnGroup.add(btnAdd);
         btnGroup.add(btnEdit);
         btnGroup.add(btnDelete);
 
         actionPanel.add(searchPanel, BorderLayout.WEST);
-        actionPanel.add(btnGroup,    BorderLayout.EAST);
+        actionPanel.add(btnGroup, BorderLayout.EAST);
 
-        headerPanel.add(titleRow,    BorderLayout.NORTH);
+        headerPanel.add(titleRow, BorderLayout.NORTH);
         headerPanel.add(actionPanel, BorderLayout.CENTER);
 
-        // ── Table ──
         String[] cols = {"ID", "Tên Phòng", "Sức Chứa", "Tầng", "Loại Phòng", "Trạng Thái"};
         roomModel = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -137,8 +144,9 @@ public class SystemConfigUI extends JPanel {
         styleModernTable(roomTable);
         roomTable.getColumnModel().getColumn(5).setCellRenderer(new StatusRenderer());
         int[] rw = {50, 220, 90, 60, 160, 120};
-        for (int i = 0; i < rw.length; i++)
+        for (int i = 0; i < rw.length; i++) {
             roomTable.getColumnModel().getColumn(i).setPreferredWidth(rw[i]);
+        }
 
         roomSorter = new TableRowSorter<>(roomModel);
         roomTable.setRowSorter(roomSorter);
@@ -149,19 +157,29 @@ public class SystemConfigUI extends JPanel {
         sp.getVerticalScrollBar().setUnitIncrement(16);
 
         panel.add(headerPanel, BorderLayout.NORTH);
-        panel.add(sp,          BorderLayout.CENTER);
+        panel.add(sp, BorderLayout.CENTER);
 
-        // ── Button listeners ──
         btnAdd.addActionListener(e -> showRoomDialog(null));
 
         btnEdit.addActionListener(e -> {
             int row = roomTable.getSelectedRow();
-            if (row < 0) { showWarn("Vui lòng chọn phòng cần sửa."); return; }
-            int id = (int) roomModel.getValueAt(roomTable.convertRowIndexToModel(row), 0);
+            if (row < 0) {
+                showWarn("Vui lòng chọn phòng cần sửa.");
+                return;
+            }
+            int modelRow = roomTable.convertRowIndexToModel(row);
+            int id = (int) roomModel.getValueAt(modelRow, 0);
             try {
                 Room r = roomDAO.findById(id);
-                if (r != null) showRoomDialog(r);
-            } catch (Exception ex) { showError(ex.getMessage()); }
+                if (r != null) {
+                    showRoomDialog(r);
+                } else {
+                    showWarn("Phòng học không còn tồn tại hoặc đã bị xóa.");
+                    loadRoomData();
+                }
+            } catch (Exception ex) {
+                showError(normalizeErrorMessage(ex));
+            }
         });
 
         btnDelete.addActionListener(e -> deleteRoom());
@@ -169,40 +187,38 @@ public class SystemConfigUI extends JPanel {
         return panel;
     }
 
-    // ── Load / refresh phòng học ──
     private void loadRoomData() {
         try {
             List<Room> list = roomDAO.findAllActive();
             roomModel.setRowCount(0);
             for (Room r : list) {
                 roomModel.addRow(new Object[]{
-                    r.getRoomId(),
-                    r.getRoomName(),
-                    r.getCapacity(),
-                    "Tầng " + r.getFloor(),
-                    r.getRoomType(),
-                    "Sẵn sàng"
+                        r.getRoomId(),
+                        safeText(r.getRoomName()),
+                        r.getCapacity(),
+                        "Tầng " + r.getFloor(),
+                        safeText(r.getRoomType()),
+                        "Sẵn sàng"
                 });
             }
             setStatus(lblRoomStatus, "Đã tải – " + list.size() + " phòng", new Color(22, 163, 74));
         } catch (Exception ex) {
             setStatus(lblRoomStatus, "Lỗi tải dữ liệu", Color.RED);
-            showError("Không tải được danh sách phòng:\n" + ex.getMessage());
+            showError("Không tải được danh sách phòng:\n" + normalizeErrorMessage(ex));
         }
     }
 
     private void filterRoomTable() {
+        if (roomSorter == null) return;
         String kw = txtRoomSearch == null ? "" : txtRoomSearch.getText().trim();
-        roomSorter.setRowFilter(
-            kw.isEmpty() ? null : RowFilter.regexFilter("(?i)" + Pattern.quote(kw)));
+        roomSorter.setRowFilter(kw.isEmpty() ? null : RowFilter.regexFilter("(?i)" + Pattern.quote(kw)));
     }
 
-    // ── Dialog Thêm / Sửa phòng ──
     private void showRoomDialog(Room existing) {
         boolean isEdit = (existing != null);
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this),
-            isEdit ? "Sửa thông tin phòng học" : "Thêm phòng học mới",
-            Dialog.ModalityType.APPLICATION_MODAL);
+                isEdit ? "Sửa thông tin phòng học" : "Thêm phòng học mới",
+                Dialog.ModalityType.APPLICATION_MODAL);
         dialog.setSize(440, 380);
         dialog.setLocationRelativeTo(this);
         dialog.setResizable(false);
@@ -212,37 +228,35 @@ public class SystemConfigUI extends JPanel {
         content.setBorder(new EmptyBorder(24, 28, 20, 28));
         content.setBackground(Color.WHITE);
 
-        // Fields
-        JTextField txtName     = dlgField(content, "Tên phòng học (*)");
-        JSpinner   spnCapacity = dlgSpinner(content, "Sức chứa (người) (*)", 1, 500, 1);
-        JSpinner   spnFloor    = dlgSpinner(content, "Tầng (*)", 1, 30, 1);
-        String[]   roomTypes   = {"Thực hành", "Tiêu chuẩn", "Hội trường", "Phòng họp", "Khác"};
+        JTextField txtName = dlgField(content, "Tên phòng học (*)");
+        JSpinner spnCapacity = dlgSpinner(content, "Sức chứa (người) (*)", MIN_ROOM_CAPACITY, MAX_ROOM_CAPACITY, 1);
+        JSpinner spnFloor = dlgSpinner(content, "Tầng (*)", MIN_ROOM_FLOOR, MAX_ROOM_FLOOR, 1);
+        String[] roomTypes = {"Thực hành", "Tiêu chuẩn", "Hội trường", "Phòng họp", "Khác"};
         JComboBox<String> cmbType = dlgCombo(content, "Loại phòng (*)", roomTypes);
 
-        // Pre-fill khi edit
         if (isEdit) {
-            txtName.setText(existing.getRoomName());
-            spnCapacity.setValue(existing.getCapacity());
-            spnFloor.setValue(existing.getFloor());
-            // Chọn loại phòng khớp
-            for (int i = 0; i < roomTypes.length; i++) {
-                if (roomTypes[i].equals(existing.getRoomType())) {
-                    cmbType.setSelectedIndex(i);
+            txtName.setText(safeText(existing.getRoomName()));
+            spnCapacity.setValue(clamp(existing.getCapacity(), MIN_ROOM_CAPACITY, MAX_ROOM_CAPACITY));
+            spnFloor.setValue(clamp(existing.getFloor(), MIN_ROOM_FLOOR, MAX_ROOM_FLOOR));
+            boolean found = false;
+            for (String roomType : roomTypes) {
+                if (roomType.equals(existing.getRoomType())) {
+                    cmbType.setSelectedItem(roomType);
+                    found = true;
                     break;
                 }
             }
-            if (cmbType.getSelectedIndex() == -1) {
+            if (!found && existing.getRoomType() != null && !existing.getRoomType().trim().isEmpty()) {
                 cmbType.addItem(existing.getRoomType());
                 cmbType.setSelectedItem(existing.getRoomType());
             }
         }
 
-        // Buttons
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         footer.setBackground(Color.WHITE);
         footer.setBorder(new EmptyBorder(10, 0, 0, 0));
-        RoundedButton btnCancel = new RoundedButton("Hủy",  "#F1F2F6", "#2D3436", 10);
-        RoundedButton btnSave   = new RoundedButton("Lưu",  "#2ECC71", "#FFFFFF", 10);
+        RoundedButton btnCancel = new RoundedButton("Hủy", "#F1F2F6", "#2D3436", 10);
+        RoundedButton btnSave = new RoundedButton("Lưu", "#2ECC71", "#FFFFFF", 10);
         btnSave.setPreferredSize(new Dimension(90, 36));
         btnCancel.setPreferredSize(new Dimension(70, 36));
         footer.add(btnCancel);
@@ -254,13 +268,35 @@ public class SystemConfigUI extends JPanel {
         btnCancel.addActionListener(e -> dialog.dispose());
         btnSave.addActionListener(e -> {
             String name = txtName.getText().trim();
-            if (name.isEmpty()) { showWarn("Tên phòng không được để trống!"); return; }
+            if (name.isEmpty()) {
+                showWarn("Tên phòng không được để trống!");
+                txtName.requestFocus();
+                return;
+            }
+
+            if (name.length() > 100) {
+                showWarn("Tên phòng không được vượt quá 100 ký tự!");
+                txtName.requestFocus();
+                return;
+            }
+
+            Integer capacity = readSpinnerInt(spnCapacity, "Sức chứa", MIN_ROOM_CAPACITY, MAX_ROOM_CAPACITY);
+            if (capacity == null) return;
+
+            Integer floor = readSpinnerInt(spnFloor, "Tầng", MIN_ROOM_FLOOR, MAX_ROOM_FLOOR);
+            if (floor == null) return;
+
+            Object typeValue = cmbType.getSelectedItem();
+            if (typeValue == null || typeValue.toString().trim().isEmpty()) {
+                showWarn("Loại phòng không được để trống!");
+                return;
+            }
 
             Room r = isEdit ? existing : new Room();
             r.setRoomName(name);
-            r.setCapacity((int) spnCapacity.getValue());
-            r.setFloor((int) spnFloor.getValue());
-            r.setRoomType((String) cmbType.getSelectedItem());
+            r.setCapacity(capacity);
+            r.setFloor(floor);
+            r.setRoomType(typeValue.toString().trim());
 
             try {
                 if (isEdit) {
@@ -276,10 +312,10 @@ public class SystemConfigUI extends JPanel {
                 loadRoomData();
             } catch (Exception ex) {
                 DBConnection.rollbackTransaction();
-                if (ex.getMessage() != null && ex.getMessage().contains("ORA-00001")) {
+                if (isUniqueConstraintError(ex)) {
                     showError("Tên phòng này đã tồn tại trong hệ thống.\nVui lòng chọn tên khác!");
                 } else {
-                    showError("Lỗi khi lưu:\n" + ex.getMessage());
+                    showError("Lỗi khi lưu phòng học:\n" + normalizeErrorMessage(ex));
                 }
             }
         });
@@ -289,24 +325,27 @@ public class SystemConfigUI extends JPanel {
 
     private void deleteRoom() {
         int row = roomTable.getSelectedRow();
-        if (row < 0) { showWarn("Vui lòng chọn phòng cần xóa."); return; }
-        int mr   = roomTable.convertRowIndexToModel(row);
-        int id   = (int)    roomModel.getValueAt(mr, 0);
-        String n = (String) roomModel.getValueAt(mr, 1);
+        if (row < 0) {
+            showWarn("Vui lòng chọn phòng cần xóa.");
+            return;
+        }
+        int modelRow = roomTable.convertRowIndexToModel(row);
+        int id = (int) roomModel.getValueAt(modelRow, 0);
+        String name = String.valueOf(roomModel.getValueAt(modelRow, 1));
 
         int ok = JOptionPane.showConfirmDialog(this,
-            "Xóa phòng \"" + n + "\"?\n(Phòng sẽ không còn xuất hiện trong lịch học mới)",
-            "Xác nhận xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                "Xóa phòng \"" + name + "\"?\n(Phòng sẽ không còn xuất hiện trong lịch học mới)",
+                "Xác nhận xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
         if (ok == JOptionPane.YES_OPTION) {
             try {
                 roomDAO.softDelete(id);
                 DBConnection.commitTransaction();
-                showInfo("Đã xóa phòng \"" + n + "\"!");
+                showInfo("Đã xóa phòng \"" + name + "\"!");
                 loadRoomData();
             } catch (Exception ex) {
                 DBConnection.rollbackTransaction();
-                showError("Lỗi khi xóa:\n" + ex.getMessage());
+                showError("Lỗi khi xóa phòng:\n" + normalizeErrorMessage(ex));
             }
         }
     }
@@ -319,7 +358,6 @@ public class SystemConfigUI extends JPanel {
         panel.setBackground(Color.WHITE);
         panel.setBorder(new EmptyBorder(25, 30, 30, 30));
 
-        // ── Header ──
         JPanel headerPanel = new JPanel(new BorderLayout(0, 12));
         headerPanel.setOpaque(false);
 
@@ -333,28 +371,27 @@ public class SystemConfigUI extends JPanel {
 
         JPanel titleRow = new JPanel(new BorderLayout());
         titleRow.setOpaque(false);
-        titleRow.add(lblTitle,      BorderLayout.WEST);
+        titleRow.add(lblTitle, BorderLayout.WEST);
         titleRow.add(lblPromoStatus, BorderLayout.EAST);
 
         JLabel lblDesc = new JLabel(
-            "<html><span style='color:#636e72;font-size:12px'>" +
-            "Chương trình giảm học phí sẽ được áp dụng khi tạo hóa đơn cho học viên." +
-            "</span></html>");
+                "<html><span style='color:#636e72;font-size:12px'>" +
+                        "Chương trình giảm học phí sẽ được áp dụng khi tạo hóa đơn cho học viên." +
+                        "</span></html>");
 
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         actionPanel.setOpaque(false);
-        RoundedButton btnAdd    = new RoundedButton("Tạo CT Khuyến Mãi", "#2ECC71", "#FFFFFF", 12);
-        RoundedButton btnEdit   = new RoundedButton("Chỉnh sửa",         "#F39C12", "#FFFFFF", 12);
-        RoundedButton btnDelete = new RoundedButton("Xóa / Vô hiệu",     "#E74C3C", "#FFFFFF", 12);
+        RoundedButton btnAdd = new RoundedButton("Tạo CT Khuyến Mãi", "#2ECC71", "#FFFFFF", 12);
+        RoundedButton btnEdit = new RoundedButton("Chỉnh sửa", "#F39C12", "#FFFFFF", 12);
+        RoundedButton btnDelete = new RoundedButton("Xóa / Vô hiệu", "#E74C3C", "#FFFFFF", 12);
         actionPanel.add(btnAdd);
         actionPanel.add(btnEdit);
         actionPanel.add(btnDelete);
 
-        headerPanel.add(titleRow,    BorderLayout.NORTH);
-        headerPanel.add(lblDesc,     BorderLayout.CENTER);
+        headerPanel.add(titleRow, BorderLayout.NORTH);
+        headerPanel.add(lblDesc, BorderLayout.CENTER);
         headerPanel.add(actionPanel, BorderLayout.SOUTH);
 
-        // ── Table ──
         String[] cols = {"Mã KM", "Tên Chương Trình", "Tỷ lệ giảm (%)", "Số môn tối thiểu"};
         promoModel = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -363,8 +400,9 @@ public class SystemConfigUI extends JPanel {
         styleModernTable(promoTable);
         promoTable.getColumnModel().getColumn(2).setCellRenderer(new DiscountRenderer());
         int[] pw = {70, 320, 140, 160};
-        for (int i = 0; i < pw.length; i++)
+        for (int i = 0; i < pw.length; i++) {
             promoTable.getColumnModel().getColumn(i).setPreferredWidth(pw[i]);
+        }
 
         JScrollPane sp = new JScrollPane(promoTable);
         sp.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
@@ -372,19 +410,29 @@ public class SystemConfigUI extends JPanel {
         sp.getVerticalScrollBar().setUnitIncrement(16);
 
         panel.add(headerPanel, BorderLayout.NORTH);
-        panel.add(sp,          BorderLayout.CENTER);
+        panel.add(sp, BorderLayout.CENTER);
 
-        // ── Button listeners ──
         btnAdd.addActionListener(e -> showPromoDialog(null));
 
         btnEdit.addActionListener(e -> {
             int row = promoTable.getSelectedRow();
-            if (row < 0) { showWarn("Vui lòng chọn chương trình cần sửa."); return; }
-            int id = (int) promoModel.getValueAt(row, 0);
+            if (row < 0) {
+                showWarn("Vui lòng chọn chương trình cần sửa.");
+                return;
+            }
+            int modelRow = promoTable.convertRowIndexToModel(row);
+            int id = (int) promoModel.getValueAt(modelRow, 0);
             try {
                 PromotionRule p = promoDAO.findById(id);
-                if (p != null) showPromoDialog(p);
-            } catch (Exception ex) { showError(ex.getMessage()); }
+                if (p != null) {
+                    showPromoDialog(p);
+                } else {
+                    showWarn("Chương trình khuyến mãi không còn tồn tại hoặc đã bị vô hiệu hóa.");
+                    loadPromoData();
+                }
+            } catch (Exception ex) {
+                showError(normalizeErrorMessage(ex));
+            }
         });
 
         btnDelete.addActionListener(e -> deletePromo());
@@ -397,27 +445,27 @@ public class SystemConfigUI extends JPanel {
             List<PromotionRule> list = promoDAO.findAllActive();
             promoModel.setRowCount(0);
             for (PromotionRule p : list) {
+                int discount = (int) p.getDiscountRate();
                 promoModel.addRow(new Object[]{
-                    p.getPromoId(),
-                    p.getPromoName(),
-                    p.getDiscountRate() + "%",
-                    p.getMinSubjects() + " môn"
+                        p.getPromoId(),
+                        safeText(p.getPromoName()),
+                        discount + "%",
+                        p.getMinSubjects() + " môn"
                 });
             }
-            setStatus(lblPromoStatus, "Đã tải – " + list.size() + " chương trình", new Color(22, 163, 74));
+            setStatus(lblPromoStatus, "Đã tải – " + list.size() + " chương trình | " + PROMO_FIX_VERSION, new Color(22, 163, 74));
         } catch (Exception ex) {
             setStatus(lblPromoStatus, "Lỗi tải dữ liệu", Color.RED);
-            showError("Không tải được danh sách khuyến mãi:\n" + ex.getMessage());
+            showError("Không tải được danh sách khuyến mãi:\n" + normalizeErrorMessage(ex));
         }
     }
 
-    // ── Dialog Thêm / Sửa khuyến mãi ──
     private void showPromoDialog(PromotionRule existing) {
         boolean isEdit = (existing != null);
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this),
-            isEdit ? "Chỉnh sửa chương trình khuyến mãi" : "Tạo chương trình khuyến mãi mới",
-            Dialog.ModalityType.APPLICATION_MODAL);
-        dialog.setSize(460, 320);
+                isEdit ? "Chỉnh sửa chương trình khuyến mãi" : "Tạo chương trình khuyến mãi mới",
+                Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setSize(460, 340);
         dialog.setLocationRelativeTo(this);
         dialog.setResizable(false);
 
@@ -426,21 +474,22 @@ public class SystemConfigUI extends JPanel {
         content.setBorder(new EmptyBorder(24, 28, 20, 28));
         content.setBackground(Color.WHITE);
 
-        JTextField txtName     = dlgField(content, "Tên chương trình khuyến mãi (*)");
-        JSpinner   spnDiscount = dlgSpinner(content, "Tỷ lệ giảm (%)  [0 – 100] (*)", 0, 100, 1);
-        JSpinner   spnMinSub   = dlgSpinner(content, "Số môn đăng ký tối thiểu (*)", 1, 20, 1);
+        JTextField txtName = dlgField(content, "Tên chương trình khuyến mãi (*)");
+        JTextField txtDiscount = dlgField(content, "Tỷ lệ giảm (%)  [0 – 100] (*)");
+        JSpinner spnMinSub = dlgSpinner(content, "Số môn đăng ký tối thiểu (*)", MIN_SUBJECTS, MAX_SUBJECTS, 1);
 
         if (isEdit) {
-            txtName.setText(existing.getPromoName());
-            spnDiscount.setValue((int) existing.getDiscountRate());
-            spnMinSub.setValue(existing.getMinSubjects());
+            txtName.setText(safeText(existing.getPromoName()));
+            int currentDiscount = (int) existing.getDiscountRate();
+            txtDiscount.setText(String.valueOf(currentDiscount));
+            spnMinSub.setValue(clamp(existing.getMinSubjects(), MIN_SUBJECTS, MAX_SUBJECTS));
         }
 
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         footer.setBackground(Color.WHITE);
         footer.setBorder(new EmptyBorder(12, 0, 0, 0));
         RoundedButton btnCancel = new RoundedButton("Hủy", "#F1F2F6", "#2D3436", 10);
-        RoundedButton btnSave   = new RoundedButton("Lưu", "#2ECC71", "#FFFFFF", 10);
+        RoundedButton btnSave = new RoundedButton("Lưu", "#2ECC71", "#FFFFFF", 10);
         btnSave.setPreferredSize(new Dimension(90, 36));
         btnCancel.setPreferredSize(new Dimension(70, 36));
         footer.add(btnCancel);
@@ -452,12 +501,28 @@ public class SystemConfigUI extends JPanel {
         btnCancel.addActionListener(e -> dialog.dispose());
         btnSave.addActionListener(e -> {
             String name = txtName.getText().trim();
-            if (name.isEmpty()) { showWarn("Tên chương trình không được để trống!"); return; }
+            if (name.isEmpty()) {
+                showWarn("Tên chương trình không được để trống!");
+                txtName.requestFocus();
+                return;
+            }
+
+            if (name.length() > 150) {
+                showWarn("Tên chương trình khuyến mãi không được vượt quá 150 ký tự!");
+                txtName.requestFocus();
+                return;
+            }
+
+            Integer discount = readTextFieldInt(txtDiscount, "Tỷ lệ khuyến mãi", MIN_DISCOUNT_RATE, MAX_DISCOUNT_RATE);
+            if (discount == null) return;
+
+            Integer minSubjects = readSpinnerInt(spnMinSub, "Số môn đăng ký tối thiểu", MIN_SUBJECTS, MAX_SUBJECTS);
+            if (minSubjects == null) return;
 
             PromotionRule p = isEdit ? existing : new PromotionRule();
             p.setPromoName(name);
-            p.setDiscountRate((int) spnDiscount.getValue());
-            p.setMinSubjects((int) spnMinSub.getValue());
+            p.setDiscountRate(discount);
+            p.setMinSubjects(minSubjects);
 
             try {
                 if (isEdit) {
@@ -473,11 +538,7 @@ public class SystemConfigUI extends JPanel {
                 loadPromoData();
             } catch (Exception ex) {
                 DBConnection.rollbackTransaction();
-                if (ex.getMessage() != null && ex.getMessage().contains("ORA-00001")) {
-                    showError("Tên chương trình khuyến mãi này đã tồn tại.\nVui lòng chọn tên khác!");
-                } else {
-                    showError("Lỗi khi lưu:\n" + ex.getMessage());
-                }
+                showError(getFriendlyErrorMessage(ex));
             }
         });
 
@@ -486,30 +547,34 @@ public class SystemConfigUI extends JPanel {
 
     private void deletePromo() {
         int row = promoTable.getSelectedRow();
-        if (row < 0) { showWarn("Vui lòng chọn chương trình cần xóa."); return; }
-        int    id = (int)    promoModel.getValueAt(row, 0);
-        String n  = (String) promoModel.getValueAt(row, 1);
+        if (row < 0) {
+            showWarn("Vui lòng chọn chương trình cần xóa.");
+            return;
+        }
+        int modelRow = promoTable.convertRowIndexToModel(row);
+        int id = (int) promoModel.getValueAt(modelRow, 0);
+        String name = String.valueOf(promoModel.getValueAt(modelRow, 1));
 
         int ok = JOptionPane.showConfirmDialog(this,
-            "Vô hiệu hóa chương trình \"" + n + "\"?\n" +
-            "(Chương trình sẽ không còn xuất hiện khi lập hóa đơn)",
-            "Xác nhận", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                "Vô hiệu hóa chương trình \"" + name + "\"?\n" +
+                        "(Chương trình sẽ không còn xuất hiện khi lập hóa đơn)",
+                "Xác nhận", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
         if (ok == JOptionPane.YES_OPTION) {
             try {
                 promoDAO.softDelete(id);
                 DBConnection.commitTransaction();
-                showInfo("Đã vô hiệu hóa \"" + n + "\"!");
+                showInfo("Đã vô hiệu hóa \"" + name + "\"!");
                 loadPromoData();
             } catch (Exception ex) {
                 DBConnection.rollbackTransaction();
-                showError("Lỗi khi xóa:\n" + ex.getMessage());
+                showError("Lỗi khi xóa chương trình khuyến mãi:\n" + normalizeErrorMessage(ex));
             }
         }
     }
 
     // ════════════════════════════════════════════════════════
-    // TAB 3 – SAO LƯU & PHỤC HỒI (giữ nguyên)
+    // TAB 3 – SAO LƯU & PHỤC HỒI
     // ════════════════════════════════════════════════════════
     private JPanel createBackupPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
@@ -519,8 +584,8 @@ public class SystemConfigUI extends JPanel {
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBackground(Color.decode("#F8F9F9"));
         card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true),
-            new EmptyBorder(50, 60, 50, 60)));
+                BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true),
+                new EmptyBorder(50, 60, 50, 60)));
 
         JLabel iconLabel = new JLabel("🗄️", SwingConstants.CENTER);
         iconLabel.setFont(new Font("Segoe UI", Font.PLAIN, 65));
@@ -532,8 +597,8 @@ public class SystemConfigUI extends JPanel {
         lblTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel lblDesc = new JLabel(
-            "<html><div style='text-align:center;'>Dữ liệu là tài sản quan trọng nhất của trung tâm.<br>" +
-            "Vui lòng thực hiện sao lưu (Backup) thường xuyên để tránh rủi ro mất mát.</div></html>");
+                "<html><div style='text-align:center;'>Dữ liệu là tài sản quan trọng nhất của trung tâm.<br>" +
+                        "Vui lòng thực hiện sao lưu (Backup) thường xuyên để tránh rủi ro mất mát.</div></html>");
         lblDesc.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         lblDesc.setForeground(Color.GRAY);
         lblDesc.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -549,9 +614,9 @@ public class SystemConfigUI extends JPanel {
         btnRestore.setPreferredSize(new Dimension(260, 46));
 
         btnBackup.addActionListener(e ->
-            JOptionPane.showMessageDialog(this,
-                "Đang tiến hành xuất file SQL Backup...", "Thông báo",
-                JOptionPane.INFORMATION_MESSAGE));
+                JOptionPane.showMessageDialog(this,
+                        "Đang tiến hành xuất file SQL Backup...", "Thông báo",
+                        JOptionPane.INFORMATION_MESSAGE));
 
         card.add(iconLabel);
         card.add(Box.createRigidArea(new Dimension(0, 15)));
@@ -570,7 +635,6 @@ public class SystemConfigUI extends JPanel {
     // ════════════════════════════════════════════════════════
     // DIALOG HELPER BUILDERS
     // ════════════════════════════════════════════════════════
-
     private JTextField dlgField(JPanel p, String label) {
         JLabel l = new JLabel(label);
         l.setFont(new Font("Segoe UI", Font.BOLD, 13));
@@ -584,8 +648,8 @@ public class SystemConfigUI extends JPanel {
         f.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         f.setAlignmentX(Component.LEFT_ALIGNMENT);
         f.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(200, 200, 200)),
-            new EmptyBorder(4, 10, 4, 10)));
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                new EmptyBorder(4, 10, 4, 10)));
         p.add(f);
         p.add(Box.createVerticalStrut(14));
         return f;
@@ -603,6 +667,17 @@ public class SystemConfigUI extends JPanel {
         sp.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         sp.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         sp.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JComponent editor = sp.getEditor();
+        if (editor instanceof JSpinner.DefaultEditor) {
+            JFormattedTextField field = ((JSpinner.DefaultEditor) editor).getTextField();
+            field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            field.setFocusLostBehavior(JFormattedTextField.COMMIT_OR_REVERT);
+            field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                    new EmptyBorder(4, 10, 4, 10)));
+        }
+
         p.add(sp);
         p.add(Box.createVerticalStrut(14));
         return sp;
@@ -648,26 +723,155 @@ public class SystemConfigUI extends JPanel {
         header.setPreferredSize(new Dimension(header.getWidth(), 38));
         header.setBorder(BorderFactory.createLineBorder(Color.decode("#D4D4D4")));
         header.setReorderingAllowed(false);
-        ((DefaultTableCellRenderer) header.getDefaultRenderer())
-            .setHorizontalAlignment(JLabel.LEFT);
+        ((DefaultTableCellRenderer) header.getDefaultRenderer()).setHorizontalAlignment(JLabel.LEFT);
     }
 
     // ════════════════════════════════════════════════════════
     // HELPERS
     // ════════════════════════════════════════════════════════
+    private Integer readSpinnerInt(JSpinner spinner, String fieldName, int min, int max) {
+        try {
+            spinner.commitEdit();
+            int value = ((Number) spinner.getValue()).intValue();
+            if (value < min || value > max) {
+                if ("Tỷ lệ khuyến mãi".equals(fieldName)) {
+                    showWarn("Tỷ lệ khuyến mãi phải nằm trong khoảng từ 0% đến 100%!");
+                } else {
+                    showWarn(fieldName + " phải nằm trong khoảng từ " + min + " đến " + max + "!");
+                }
+                spinner.requestFocus();
+                return null;
+            }
+            return value;
+        } catch (ParseException | ClassCastException ex) {
+            if ("Tỷ lệ khuyến mãi".equals(fieldName)) {
+                showWarn("Tỷ lệ khuyến mãi phải là số nguyên từ 0% đến 100%!");
+            } else {
+                showWarn(fieldName + " phải là số nguyên hợp lệ!");
+            }
+            spinner.requestFocus();
+            return null;
+        }
+    }
+
+    private Integer readTextFieldInt(JTextField field, String fieldName, int min, int max) {
+        String raw = field.getText().trim();
+
+        if (raw.isEmpty()) {
+            showWarn(fieldName + " không được để trống!");
+            field.requestFocus();
+            return null;
+        }
+
+        int value;
+        try {
+            value = Integer.parseInt(raw);
+        } catch (NumberFormatException ex) {
+            if ("Tỷ lệ khuyến mãi".equals(fieldName)) {
+                showWarn("Tỷ lệ khuyến mãi phải là số nguyên từ 0% đến 100%!");
+            } else {
+                showWarn(fieldName + " phải là số nguyên hợp lệ!");
+            }
+            field.requestFocus();
+            field.selectAll();
+            return null;
+        }
+
+        if (value < min || value > max) {
+            if ("Tỷ lệ khuyến mãi".equals(fieldName)) {
+                showWarn("Tỷ lệ khuyến mãi phải nằm trong khoảng từ 0% đến 100%!");
+            } else {
+                showWarn(fieldName + " phải nằm trong khoảng từ " + min + " đến " + max + "!");
+            }
+            field.requestFocus();
+            field.selectAll();
+            return null;
+        }
+
+        return value;
+    }
+
+    private String getFriendlyErrorMessage(Exception ex) {
+        String msg = ex.getMessage();
+        if (msg == null || msg.trim().isEmpty()) {
+            return "Đã xảy ra lỗi không xác định. Vui lòng thử lại.";
+        }
+
+        if (msg.contains("ORA-00001")) {
+            return "Tên chương trình khuyến mãi đã tồn tại.\nVui lòng nhập tên khác.";
+        }
+
+        if (msg.contains("ORA-02289")) {
+            return "Hệ thống chưa cấu hình mã tự động cho chương trình khuyến mãi.\n"
+                 + "Vui lòng kiểm tra lại PromotionDAO hoặc cấu hình database.";
+        }
+
+        if (msg.contains("ORA-02290")) {
+            return "Dữ liệu khuyến mãi không hợp lệ.\n"
+                 + "Tỷ lệ khuyến mãi phải nằm trong khoảng từ 0% đến 100%.";
+        }
+
+        if (msg.contains("ORA-01400")) {
+            return "Thiếu thông tin bắt buộc.\nVui lòng kiểm tra lại các ô nhập liệu.";
+        }
+
+        if (msg.contains("ORA-12899")) {
+            return "Dữ liệu nhập quá dài.\nVui lòng rút ngắn nội dung.";
+        }
+
+        if (msg.contains("ORA-00054")) {
+            return "Dữ liệu đang được người dùng khác xử lý.\nVui lòng thử lại sau vài giây.";
+        }
+
+        if (msg.contains("Tỷ lệ khuyến mãi") || msg.contains("Tên chương trình") || msg.contains("Số môn")) {
+            return msg;
+        }
+
+        return "Không thể lưu chương trình khuyến mãi.\n"
+             + "Vui lòng kiểm tra lại dữ liệu hoặc thử lại sau.";
+    }
+
+    private int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private String safeText(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private boolean isUniqueConstraintError(Exception ex) {
+        String msg = ex.getMessage();
+        return msg != null && msg.contains("ORA-00001");
+    }
+
+    private String normalizeErrorMessage(Exception ex) {
+        String msg = ex.getMessage();
+        return (msg == null || msg.trim().isEmpty()) ? ex.getClass().getSimpleName() : msg;
+    }
+
     private void setStatus(JLabel lbl, String msg, Color color) {
         if (lbl == null) return;
-        SwingUtilities.invokeLater(() -> { lbl.setText(msg); lbl.setForeground(color); });
+        SwingUtilities.invokeLater(() -> {
+            lbl.setText(msg);
+            lbl.setForeground(color);
+        });
     }
-    private void showInfo (String m) { JOptionPane.showMessageDialog(this, m, "Thông báo",    JOptionPane.INFORMATION_MESSAGE); }
-    private void showWarn (String m) { JOptionPane.showMessageDialog(this, m, "Cảnh báo",     JOptionPane.WARNING_MESSAGE);     }
-    private void showError(String m) { JOptionPane.showMessageDialog(this, m, "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);       }
+
+    private void showInfo(String m) {
+        JOptionPane.showMessageDialog(this, m, "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void showWarn(String m) {
+        JOptionPane.showMessageDialog(this, m, "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+    }
+
+    private void showError(String m) {
+        JOptionPane.showMessageDialog(this, m, "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+    }
 
     // ════════════════════════════════════════════════════════
     // INNER RENDERERS
     // ════════════════════════════════════════════════════════
-
-    /** Badge màu cho cột Trạng Thái phòng */
     private static class StatusRenderer extends DefaultTableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(
@@ -688,7 +892,6 @@ public class SystemConfigUI extends JPanel {
         }
     }
 
-    /** Badge màu cho cột Tỷ lệ giảm */
     private static class DiscountRenderer extends DefaultTableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(
@@ -697,29 +900,44 @@ public class SystemConfigUI extends JPanel {
             setBorder(new EmptyBorder(0, 12, 0, 12));
             setHorizontalAlignment(SwingConstants.CENTER);
             setFont(new Font("Segoe UI", Font.BOLD, 13));
-            if (!sel) {
-                String raw = v == null ? "0%" : v.toString();
-                double rate = 0;
-                try { rate = Double.parseDouble(raw.replace("%", "").trim()); } catch (Exception ignored) {}
-                if (rate >= 20) {
-                    setBackground(new Color(254, 240, 138)); setForeground(new Color(133, 77, 14));
-                } else if (rate >= 10) {
-                    setBackground(new Color(254, 215, 215)); setForeground(new Color(185, 28, 28));
-                } else {
-                    setBackground(new Color(239, 246, 255)); setForeground(new Color(29, 78, 216));
-                }
+            setOpaque(true);
+
+            if (sel) {
+                setBackground(t.getSelectionBackground());
+                setForeground(t.getSelectionForeground());
+                return this;
+            }
+
+            String raw = v == null ? "0%" : v.toString();
+            double rate = 0;
+            try {
+                rate = Double.parseDouble(raw.replace("%", "").trim());
+            } catch (Exception ignored) {
+                rate = 0;
+            }
+
+            if (rate >= 20) {
+                setBackground(new Color(254, 240, 138));
+                setForeground(new Color(133, 77, 14));
+            } else if (rate >= 10) {
+                setBackground(new Color(254, 215, 215));
+                setForeground(new Color(185, 28, 28));
+            } else {
+                setBackground(new Color(239, 246, 255));
+                setForeground(new Color(29, 78, 216));
             }
             return this;
         }
     }
 
     // ════════════════════════════════════════════════════════
-    // INNER CLASS: NÚT BO GÓC (giữ nguyên từ bản gốc)
+    // INNER CLASS: NÚT BO GÓC
     // ════════════════════════════════════════════════════════
     class RoundedButton extends JButton {
-        private final Color bgColor, fgColor;
+        private final Color bgColor;
+        private final Color fgColor;
         private final Color borderColor;
-        private final int   radius;
+        private final int radius;
 
         RoundedButton(String text, String bgHex, String fgHex, int radius) {
             this(text, bgHex, fgHex, null, radius);
@@ -727,15 +945,16 @@ public class SystemConfigUI extends JPanel {
 
         RoundedButton(String text, String bgHex, String fgHex, String borderHex, int radius) {
             super(text);
-            this.bgColor     = Color.decode(bgHex);
-            this.fgColor     = Color.decode(fgHex);
+            this.bgColor = Color.decode(bgHex);
+            this.fgColor = Color.decode(fgHex);
             this.borderColor = borderHex != null ? Color.decode(borderHex) : null;
-            this.radius      = radius;
+            this.radius = radius;
             setForeground(this.fgColor);
             setFont(new Font("Segoe UI", Font.BOLD, 13));
             setFocusPainted(false);
             setContentAreaFilled(false);
             setBorderPainted(false);
+            setOpaque(false);
             setCursor(new Cursor(Cursor.HAND_CURSOR));
             setBorder(new EmptyBorder(8, 18, 8, 18));
         }
@@ -745,11 +964,11 @@ public class SystemConfigUI extends JPanel {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setColor(getModel().isPressed() ? bgColor.darker() : bgColor);
-            g2.fillRoundRect(0, 0, getWidth()-1, getHeight()-1, radius, radius);
+            g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
             if (borderColor != null) {
                 g2.setColor(borderColor);
                 g2.setStroke(new BasicStroke(1.5f));
-                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, radius, radius);
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
             }
             g2.dispose();
             super.paintComponent(g);

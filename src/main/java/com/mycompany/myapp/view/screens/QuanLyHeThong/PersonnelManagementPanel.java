@@ -113,11 +113,11 @@ public class PersonnelManagementPanel extends JPanel {
         lblStatus.setForeground(TEXT_MUTE);
 
         btnAdd          = mkBtn("+ Thêm mới",       SUCCESS);
-        btnAssignProfile= mkBtn("📋 Gán hồ sơ",    new Color(20, 184, 166));
-        btnEdit         = mkBtn("✎ Sửa",           PRIMARY);
-        btnToggleLock   = mkBtn("🔒 Khóa TK",      WARNING_C);
-        btnResetPwd     = mkBtn("🔑 Đặt lại MK",   new Color(14, 165, 233));
-        btnDelete       = mkBtn("✕ Xóa",           DANGER);
+        btnAssignProfile= mkBtn("Gán hồ sơ",    new Color(20, 184, 166));
+        btnEdit         = mkBtn("Sửa",           PRIMARY);
+        btnToggleLock   = mkBtn("Khóa TK",      WARNING_C);
+        btnResetPwd     = mkBtn("Đặt lại MK",   new Color(14, 165, 233));
+        btnDelete       = mkBtn("Xóa",           DANGER);
 
         btnEdit.setEnabled(false);
         btnToggleLock.setEnabled(false);
@@ -251,7 +251,7 @@ public class PersonnelManagementPanel extends JPanel {
         body.setBorder(new EmptyBorder(0, 20, 20, 20));
 
         // ── Section: Thông tin cá nhân ──
-        body.add(sectionTitle("👤  Thông tin cơ bản"));
+        body.add(sectionTitle("Thông tin cơ bản"));
         body.add(Box.createVerticalStrut(8));
         JPanel gUser = infoGrid();
         dUserId   = addInfoRow(gUser, "Mã nhân sự");
@@ -263,7 +263,7 @@ public class PersonnelManagementPanel extends JPanel {
         body.add(Box.createVerticalStrut(16));
 
         // ── Section: Tài khoản ──
-        body.add(sectionTitle("🔐  Thông tin tài khoản"));
+        body.add(sectionTitle("Thông tin tài khoản"));
         body.add(Box.createVerticalStrut(8));
         JPanel gAcc = infoGrid();
         dUsername      = addInfoRow(gAcc, "Tên đăng nhập");
@@ -276,7 +276,7 @@ public class PersonnelManagementPanel extends JPanel {
         pnlTeacher = new JPanel();
         pnlTeacher.setOpaque(false);
         pnlTeacher.setLayout(new BoxLayout(pnlTeacher, BoxLayout.Y_AXIS));
-        pnlTeacher.add(sectionTitle("📚  Hồ sơ Giáo viên"));
+        pnlTeacher.add(sectionTitle("Hồ sơ Giáo viên"));
         pnlTeacher.add(Box.createVerticalStrut(8));
         JPanel gT = infoGrid();
         dMajor  = addInfoRow(gT, "Chuyên ngành");
@@ -288,7 +288,7 @@ public class PersonnelManagementPanel extends JPanel {
         pnlStaff = new JPanel();
         pnlStaff.setOpaque(false);
         pnlStaff.setLayout(new BoxLayout(pnlStaff, BoxLayout.Y_AXIS));
-        pnlStaff.add(sectionTitle("🏢  Hồ sơ Nhân viên"));
+        pnlStaff.add(sectionTitle("Hồ sơ Nhân viên"));
         pnlStaff.add(Box.createVerticalStrut(8));
         JPanel gS = infoGrid();
         dPosition = addInfoRow(gS, "Chức vụ");
@@ -363,7 +363,7 @@ public class PersonnelManagementPanel extends JPanel {
         setActionButtons(true);
 
         boolean locked = "LOCKED".equals(selected.getAccountStatus());
-        btnToggleLock.setText(locked ? "🔓 Mở khóa TK" : "🔒 Khóa TK");
+        btnToggleLock.setText(locked ? "Mở khóa TK" : "Khóa TK");
         btnToggleLock.setBackground(locked ? SUCCESS : WARNING_C);
     }
 
@@ -604,7 +604,7 @@ public class PersonnelManagementPanel extends JPanel {
 
             JPanel topHdr = new JPanel(new BorderLayout(8, 0));
             topHdr.setOpaque(false);
-            JLabel step1 = new JLabel("① Chọn tài khoản cần gán hồ sơ");
+            JLabel step1 = new JLabel("Chọn tài khoản cần gán hồ sơ");
             step1.setFont(new Font("Segoe UI", Font.BOLD, 13));
             step1.setForeground(PRIMARY);
             txtUserSearch = new JTextField();
@@ -768,7 +768,7 @@ public class PersonnelManagementPanel extends JPanel {
             footer.setBorder(new MatteBorder(1, 0, 0, 0, BORDER_C));
             JButton btnC = new JButton("Hủy");
             btnC.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-            JButton btnA = new JButton("✔  Gán hồ sơ");
+            JButton btnA = new JButton(" Gán hồ sơ");
             btnA.setFont(new Font("Segoe UI", Font.BOLD, 13));
             btnA.setBackground(new Color(20, 184, 166));
             btnA.setForeground(Color.WHITE);
@@ -980,7 +980,7 @@ public class PersonnelManagementPanel extends JPanel {
             tfEmail  = dlgRow(p1, "Email (*)");
             tfPhone  = dlgRow(p1, "Số điện thoại");
             tfIdCard = dlgRow(p1, "CMND / CCCD");
-            tabs.addTab("👤  Cá nhân", scrollForm(p1));
+            tabs.addTab("Cá nhân", scrollForm(p1));
 
             // ── Tab 2: Tài khoản hệ thống ──
             JPanel p2 = tabForm();
@@ -1031,7 +1031,7 @@ public class PersonnelManagementPanel extends JPanel {
             p2.add(Box.createVerticalStrut(4));
             p2.add(cmbType);
             p2.add(Box.createVerticalStrut(10));
-            tabs.addTab("🔐  Tài khoản", scrollForm(p2));
+            tabs.addTab("Tài khoản", scrollForm(p2));
 
             // ── Tab 3: Hồ sơ chuyên môn (CardLayout) ──
             tab3Container = new JPanel(new CardLayout());
@@ -1048,13 +1048,13 @@ public class PersonnelManagementPanel extends JPanel {
             tfGrade    = dlgRow(pStaff, "Bậc lương (số nguyên)");
             tab3Container.add(scrollForm(pStaff), "STAFF");
 
-            tabs.addTab("📚  Hồ sơ GV", tab3Container);
+            tabs.addTab("Hồ sơ GV", tab3Container);
 
             // Khi đổi loại → đổi card Tab 3 + tên tab
             cmbType.addActionListener(e -> {
                 boolean isT = cmbType.getSelectedIndex() == 0;
                 ((CardLayout) tab3Container.getLayout()).show(tab3Container, isT ? "TEACHER" : "STAFF");
-                tabs.setTitleAt(2, isT ? "📚  Hồ sơ GV" : "🏢  Hồ sơ NV");
+                tabs.setTitleAt(2, isT ? "Hồ sơ GV" : "Hồ sơ NV");
             });
 
             root.add(tabs, BorderLayout.CENTER);

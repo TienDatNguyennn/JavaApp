@@ -1,87 +1,94 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.mycompany.myapp.utils;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Lớp quản lý phiên làm việc (Session) của ứng dụng.
- * Áp dụng tiêu chuẩn Utility Class, Thread-Safe và Immutable Data.
- */
 public class SessionStore {
-    
-    // 1. Dùng từ khóa 'volatile' để đảm bảo tính đồng nhất dữ liệu khi ứng dụng chạy nhiều luồng (Ví dụ: SwingWorker)
-    private static volatile String currentToken;
-    private static volatile Map<String, Object> userInfo;
-    private static volatile List<String> roles;
 
-    // 2. Private constructor: Tiêu chuẩn Clean Code cho các Utility Class (class chỉ chứa static method)
-    // Ngăn chặn việc dev khác vô tình tạo đối tượng: new SessionStore()
+    private static String token;
+    private static int accountId;
+    private static int userId;
+    private static String username;
+    private static String fullName;
+    private static List<String> userRoles = new ArrayList<>();
+
     private SessionStore() {
-        throw new IllegalStateException("Utility class - Không được phép khởi tạo");
     }
 
-    // 3. Dùng synchronized để tránh xung đột nếu có 2 luồng cùng ghi đè session
-    public static synchronized void saveSession(String token, Map<String, Object> user, List<String> userRoles) {
-        currentToken = token;
-        
-        // 4. IMMUTABILITY (Bất biến): Bọc dữ liệu bằng unmodifiable
-        // Tránh lỗi bảo mật nghiêm trọng: Một class nào đó gọi SessionStore.getUserRoles().add("Admin")
-        userInfo = user != null ? Collections.unmodifiableMap(new HashMap<>(user)) : null;
-        roles = userRoles != null ? Collections.unmodifiableList(new ArrayList<>(userRoles)) : null;
+    public static void saveSession(
+            String tokenValue,
+            Map<String, Object> userInfo,
+            List<String> roles
+    ) {
+        token = tokenValue;
+
+        accountId = getInt(userInfo.get("account_id"));
+        userId = getInt(userInfo.get("user_id"));
+
+        username = getString(userInfo.get("username"));
+        fullName = getString(userInfo.get("full_name"));
+
+        userRoles = roles == null ? new ArrayList<>() : new ArrayList<>(roles);
+
+        System.out.println("===== SESSION SAVED =====");
+        System.out.println("Session accountId = " + accountId);
+        System.out.println("Session userId = " + userId);
+        System.out.println("Session username = " + username);
+        System.out.println("Session fullName = " + fullName);
+        System.out.println("Session roles = " + userRoles);
     }
 
-    public static String getCurrentToken() { 
-        return currentToken; 
+    public static String getToken() {
+        return token;
     }
-    
-    // Hàm mới: Kiểm tra xem user đã đăng nhập chưa (rất hay dùng khi check chuyển trang)
-    public static boolean isAuthenticated() {
-        return currentToken != null && userInfo != null;
+
+    public static int getAccountId() {
+        return accountId;
+    }
+
+    public static int getUserId() {
+        return userId;
+    }
+
+    public static String getUsername() {
+        return username;
     }
 
     public static String getFullName() {
-        // Parse dữ liệu an toàn, tránh NullPointerException
-        if (userInfo != null && userInfo.get("full_name") != null) {
-            return String.valueOf(userInfo.get("full_name"));
-        }
-        return "Người dùng";
-    }
-    
-    // Hàm mới: Lấy ID tài khoản để thực hiện các câu lệnh truy vấn SQL (Update, Delete chính mình...)
-    public static Integer getAccountId() {
-        if (userInfo != null && userInfo.get("account_id") != null) {
-            return (Integer) userInfo.get("account_id");
-        }
-        return -1; 
+        return fullName;
     }
 
-    public static boolean hasRole(String roleName) {
-        return roles != null && roles.contains(roleName);
-    }
-    
-    // Hàm mới: Trả về danh sách quyền (Đảm bảo trả về list rỗng nếu null để tránh lỗi NullPointerException khi dùng vòng lặp)
     public static List<String> getUserRoles() {
-        return roles != null ? roles : Collections.emptyList();
+        return userRoles == null ? new ArrayList<>() : new ArrayList<>(userRoles);
     }
 
-    public static synchronized void clearSession() {
-        currentToken = null;
-        userInfo = null;
-        roles = null;
+    public static void clearSession() {
+        token = null;
+        accountId = 0;
+        userId = 0;
+        username = null;
+        fullName = null;
+        userRoles = new ArrayList<>();
     }
-    
-    // Thêm vào SessionStore.java
-    public static Integer getUserId() {
-        if (userInfo != null && userInfo.get("user_id") != null) {
-            return (Integer) userInfo.get("user_id");
+
+    private static int getInt(Object value) {
+        if (value == null) {
+            return 0;
         }
-        return -1; 
+
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+
+        try {
+            return Integer.parseInt(value.toString());
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private static String getString(Object value) {
+        return value == null ? "" : value.toString();
     }
 }

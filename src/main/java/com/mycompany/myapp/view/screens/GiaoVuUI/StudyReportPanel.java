@@ -141,7 +141,7 @@ public class StudyReportPanel extends JPanel {
         lblFailed = new JLabel("0");
         lblShowing = new JLabel("0");
 
-        metricRow.add(createMetricCard("Tổng học viên", lblTotalStudents, "HV", new StudentIconPanel(PRIMARY, PRIMARY_SOFT), PRIMARY));
+        metricRow.add(createMetricCard("Tổng số kết quả", lblTotalStudents, "HV", new StudentIconPanel(PRIMARY, PRIMARY_SOFT), PRIMARY));
         metricRow.add(createMetricCard("Học viên đạt", lblPassed, "HV", new CheckIconPanel(GREEN, GREEN_SOFT), GREEN));
         metricRow.add(createMetricCard("Chưa đạt", lblFailed, "HV", new FailIconPanel(RED, RED_SOFT), RED));
         metricRow.add(createMetricCard("Đang hiển thị", lblShowing, "HV", new ViewIconPanel(BLUE, BLUE_SOFT), BLUE));
