@@ -281,7 +281,7 @@ public class PayrollRepository {
         List<Payroll> list = new ArrayList<>();
 
         boolean filterTeacher = isAllStaffType(staffType) || "TEACHER".equalsIgnoreCase(staffType.trim());
-        boolean filterOffice  = isAllStaffType(staffType) || "OFFICE".equalsIgnoreCase(staffType.trim());
+        boolean filterOffice = isAllStaffType(staffType) || "OFFICE".equalsIgnoreCase(staffType.trim());
 
         if (filterTeacher) {
             String sql =
