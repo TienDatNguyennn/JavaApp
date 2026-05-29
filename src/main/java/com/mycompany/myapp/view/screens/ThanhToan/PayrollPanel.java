@@ -2,6 +2,7 @@ package com.mycompany.myapp.view.screens.ThanhToan;
 
 import com.mycompany.myapp.controller.FinanceController;
 import com.mycompany.myapp.model.Payroll;
+import com.mycompany.myapp.model.StaffOptionDTO;
 import com.mycompany.myapp.view.components.CustomButton;
 
 import javax.swing.*;
@@ -12,15 +13,6 @@ import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Màn hình tính lương nhân viên.
- *
- * Lưu ý:
- * - Trong database vẫn dùng mã nội bộ: TEACHER, OFFICE.
- * - Trên giao diện chỉ hiển thị tiếng Việt:
- *   + TEACHER -> Giáo viên
- *   + OFFICE  -> Nhân viên giáo vụ
- */
 public class PayrollPanel extends JPanel {
 
     private static final Color PRIMARY   = new Color(108, 92, 231);
@@ -55,6 +47,9 @@ public class PayrollPanel extends JPanel {
     private DefaultTableModel tableModel;
     private JTable tblPayroll;
 
+    private JComboBox<StaffOptionDTO> cmbStaff;
+    private List<StaffOptionDTO> staffOptions;
+
     private JTextField txtUserId;
     private JTextField txtAddPeriod;
     private JTextField txtBasic;
@@ -74,6 +69,7 @@ public class PayrollPanel extends JPanel {
         add(buildHeader(), BorderLayout.NORTH);
         add(buildContent(), BorderLayout.CENTER);
 
+        loadStaffOptions();
         loadData();
     }
 
@@ -267,8 +263,18 @@ public class PayrollPanel extends JPanel {
         card.add(title);
         addGap(card, 15);
 
+        addFormLabel(card, "Chọn giáo viên / nhân viên");
+        cmbStaff = new JComboBox<>();
+        cmbStaff.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        cmbStaff.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+        cmbStaff.addActionListener(e -> fillSelectedStaffInfo());
+        card.add(cmbStaff);
+        addGap(card, 10);
+
         addFormLabel(card, "Mã nhân viên");
         txtUserId = styledField("");
+        txtUserId.setEditable(false);
+        txtUserId.setBackground(new Color(241, 243, 245));
         card.add(txtUserId);
         addGap(card, 10);
 
@@ -284,6 +290,7 @@ public class PayrollPanel extends JPanel {
         });
         cmbAddType.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         cmbAddType.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+        cmbAddType.setEnabled(false);
         card.add(cmbAddType);
         addGap(card, 10);
 
@@ -314,9 +321,17 @@ public class PayrollPanel extends JPanel {
         addGap(card, 15);
 
         javax.swing.event.DocumentListener documentListener = new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { recalc(lblTotalValue); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { recalc(lblTotalValue); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { recalc(lblTotalValue); }
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                recalc(lblTotalValue);
+            }
+
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                recalc(lblTotalValue);
+            }
+
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                recalc(lblTotalValue);
+            }
         };
 
         txtBasic.getDocument().addDocumentListener(documentListener);
@@ -342,18 +357,87 @@ public class PayrollPanel extends JPanel {
         return card;
     }
 
+    private void loadStaffOptions() {
+        staffOptions = ctrl.getStaffOptions();
+
+        if (cmbStaff == null) {
+            return;
+        }
+
+        cmbStaff.removeAllItems();
+
+        if (staffOptions == null || staffOptions.isEmpty()) {
+            txtUserId.setText("");
+            txtBasic.setText("0");
+            txtTeaching.setText("0");
+            txtBonus.setText("0");
+            recalc(lblTotalValue);
+            return;
+        }
+
+        for (StaffOptionDTO staff : staffOptions) {
+            cmbStaff.addItem(staff);
+        }
+
+        cmbStaff.setSelectedIndex(0);
+        fillSelectedStaffInfo();
+    }
+
+    private void fillSelectedStaffInfo() {
+        if (cmbStaff == null || cmbStaff.getSelectedItem() == null) {
+            return;
+        }
+
+        StaffOptionDTO staff = (StaffOptionDTO) cmbStaff.getSelectedItem();
+
+        txtUserId.setText(String.valueOf(staff.getUserId()));
+
+        if (STAFF_TEACHER_CODE.equals(staff.getStaffType())) {
+            cmbAddType.setSelectedItem(STAFF_TEACHER_DISPLAY);
+            txtBasic.setText("0");
+            txtTeaching.setText("0");
+        } else {
+            cmbAddType.setSelectedItem(STAFF_OFFICE_DISPLAY);
+            txtBasic.setText(String.valueOf((long) staff.getBaseSalary()));
+            txtTeaching.setText("0");
+        }
+
+        txtBonus.setText("0");
+        recalc(lblTotalValue);
+    }
+
+    private void selectStaffByUserId(int userId) {
+        if (cmbStaff == null) {
+            return;
+        }
+
+        for (int i = 0; i < cmbStaff.getItemCount(); i++) {
+            StaffOptionDTO staff = cmbStaff.getItemAt(i);
+
+            if (staff != null && staff.getUserId() == userId) {
+                cmbStaff.setSelectedIndex(i);
+                return;
+            }
+        }
+    }
+
     private void clearForm() {
         txtUserId.setText("");
-        txtUserId.setEditable(true);
-        txtUserId.setBackground(Color.WHITE);
+        txtUserId.setEditable(false);
+        txtUserId.setBackground(new Color(241, 243, 245));
 
         txtAddPeriod.setText(txtFilterPeriod.getText().trim());
-        cmbAddType.setSelectedIndex(0);
 
-        txtBasic.setText("0");
-        txtTeaching.setText("0");
-        txtBonus.setText("0");
-        lblTotalValue.setText("0đ");
+        if (cmbStaff != null && cmbStaff.getItemCount() > 0) {
+            cmbStaff.setEnabled(true);
+            cmbStaff.setSelectedIndex(0);
+            fillSelectedStaffInfo();
+        } else {
+            txtBasic.setText("0");
+            txtTeaching.setText("0");
+            txtBonus.setText("0");
+            recalc(lblTotalValue);
+        }
     }
 
     private void loadData() {
@@ -402,10 +486,13 @@ public class PayrollPanel extends JPanel {
             }
         }
 
+        int totalStaff = staffOptions == null ? 0 : staffOptions.size();
+        int pending = Math.max(0, totalStaff - tableModel.getRowCount());
+
         lblTotalSalary.setText(nf.format(totalSum) + "đ");
         lblCountTeacher.setText(String.valueOf(teacherCount));
         lblCountOffice.setText(String.valueOf(officeCount));
-        lblCountPending.setText("0");
+        lblCountPending.setText(String.valueOf(pending));
     }
 
     private void prepareEdit() {
@@ -416,7 +503,15 @@ public class PayrollPanel extends JPanel {
             return;
         }
 
-        txtUserId.setText(tableModel.getValueAt(row, 0).toString());
+        int userId = Integer.parseInt(tableModel.getValueAt(row, 0).toString());
+
+        selectStaffByUserId(userId);
+
+        if (cmbStaff != null) {
+            cmbStaff.setEnabled(false);
+        }
+
+        txtUserId.setText(String.valueOf(userId));
         txtUserId.setEditable(false);
         txtUserId.setBackground(new Color(241, 243, 245));
 
@@ -477,8 +572,7 @@ public class PayrollPanel extends JPanel {
     private void savePayroll() {
         try {
             if (txtUserId.getText().trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng nhập mã nhân viên!");
-                txtUserId.requestFocus();
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn giáo viên / nhân viên!");
                 return;
             }
 
@@ -508,12 +602,10 @@ public class PayrollPanel extends JPanel {
                 return;
             }
 
-            double totalNet = basic + teaching + bonus;
-
             payroll.setBasicSalary(basic);
             payroll.setTotalTeachingFee(teaching);
             payroll.setBonusAmount(bonus);
-            payroll.setTotalNet(totalNet);
+            payroll.setTotalNet(basic + teaching + bonus);
 
             String result = ctrl.savePayroll(payroll);
 
@@ -527,7 +619,6 @@ public class PayrollPanel extends JPanel {
 
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "Mã nhân viên phải là số nguyên!");
-            txtUserId.requestFocus();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Lỗi nhập liệu: " + ex.getMessage());
         }
@@ -568,12 +659,6 @@ public class PayrollPanel extends JPanel {
         return value.replaceAll("[^0-9]", "");
     }
 
-    /**
-     * Dùng cho combobox lọc.
-     * - Tất cả -> truyền null để lấy toàn bộ.
-     * - Giáo viên -> TEACHER.
-     * - Nhân viên giáo vụ -> OFFICE.
-     */
     private String staffDisplayToCodeForFilter(String display) {
         if (STAFF_TEACHER_DISPLAY.equals(display)) {
             return STAFF_TEACHER_CODE;
@@ -586,10 +671,6 @@ public class PayrollPanel extends JPanel {
         return null;
     }
 
-    /**
-     * Dùng khi lưu xuống database.
-     * Database vẫn giữ mã ổn định TEACHER/OFFICE.
-     */
     private String staffDisplayToCodeForSave(String display) {
         if (STAFF_OFFICE_DISPLAY.equals(display)) {
             return STAFF_OFFICE_CODE;
@@ -598,9 +679,6 @@ public class PayrollPanel extends JPanel {
         return STAFF_TEACHER_CODE;
     }
 
-    /**
-     * Dùng khi hiển thị từ database lên giao diện.
-     */
     private String staffCodeToDisplay(String code) {
         if (STAFF_TEACHER_CODE.equals(code)) {
             return STAFF_TEACHER_DISPLAY;

@@ -37,7 +37,7 @@ public class DBConnection {
             try {
                 Class.forName("oracle.jdbc.OracleDriver");
                 conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
-                conn.setAutoCommit(false);
+                conn.setAutoCommit(true);
                 transactionConnection.set(conn);
             } catch (ClassNotFoundException e) {
                 throw new SQLException("Oracle JDBC Driver not found.", e);

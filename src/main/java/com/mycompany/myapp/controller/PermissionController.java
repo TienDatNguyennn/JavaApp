@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class PermissionController {
-    private PermissionService service = new PermissionService();
+    private final PermissionService service = new PermissionService();
 
     public List<PermissionDTO> getPermissions(int roleGroupId) throws SQLException {
         return service.loadPermissions(roleGroupId);

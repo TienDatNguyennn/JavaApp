@@ -2,6 +2,8 @@ package com.mycompany.myapp.repository;
 
 import com.mycompany.myapp.config.DBConnection;
 import com.mycompany.myapp.model.Invoice;
+import com.mycompany.myapp.model.InvoiceEmailDTO;
+import com.mycompany.myapp.model.InvoiceEmailItemDTO;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -180,9 +182,11 @@ public class InvoiceRepository {
             ps.setInt(1, inv.getStudentId());
 
             int staffId = inv.getStaffId();
+
             if (staffId <= 0) {
                 staffId = com.mycompany.myapp.utils.SessionStore.getUserId();
             }
+
             if (staffId <= 0) {
                 staffId = 1;
             }
@@ -233,7 +237,8 @@ public class InvoiceRepository {
                 "       final_amount   = ?, " +
                 "       amount_paid    = ?, " +
                 "       payment_method = ?, " +
-                "       status         = ? " +
+                "       status         = ?, " +
+                "       updated_at     = SYSDATE " +
                 "WHERE  invoice_id = ? AND is_deleted = 0";
 
         try (
@@ -266,7 +271,7 @@ public class InvoiceRepository {
     }
 
     public boolean softDelete(int invoiceId) {
-        String sql = "UPDATE INVOICE SET is_deleted = 1 WHERE invoice_id = ?";
+        String sql = "UPDATE INVOICE SET is_deleted = 1, updated_at = SYSDATE WHERE invoice_id = ?";
 
         try (
                 Connection c = DBConnection.getConnection();
@@ -284,22 +289,6 @@ public class InvoiceRepository {
     /**
      * Cập nhật nộp thêm tiền.
      *
-     * DEMO LOST UPDATE:
-     *
-     * USE_LOCK_FIX = false:
-     * - Bản lỗi.
-     * - Đọc amount_paid không khóa.
-     * - Tính totalPaidNew ở Java.
-     * - Hai cửa sổ có thể cùng đọc amount_paid cũ rồi ghi đè nhau.
-     *
-     * USE_LOCK_FIX = true:
-     * - Bản đã fix.
-     * - Dùng SELECT FOR UPDATE để khóa dòng hóa đơn.
-     * - Transaction sau phải chờ transaction trước commit.
-     */
-    /**
-     * Cập nhật nộp thêm tiền.
-     *
      * Bản fix chuẩn thực tế:
      * - Luôn khóa dòng INVOICE bằng SELECT FOR UPDATE trước khi tính tiền còn nợ.
      * - Nếu hóa đơn đã thanh toán đủ thì báo lỗi, không cho ghi nhận thêm.
@@ -310,9 +299,11 @@ public class InvoiceRepository {
         if (invoiceId <= 0) {
             throw new SQLException("Hóa đơn không hợp lệ.");
         }
+
         if (newAmountIn <= 0) {
             throw new SQLException("Số tiền thanh toán phải lớn hơn 0.");
         }
+
         if (method == null || method.trim().isEmpty()) {
             throw new SQLException("Vui lòng chọn phương thức thanh toán.");
         }
@@ -420,8 +411,14 @@ public class InvoiceRepository {
         }
     }
 
+    /**
+     * Hàm cũ dùng cho chức năng hóa đơn điện tử/demo API.
+     */
     public boolean updateApiStatus(int invoiceId, String apiStatus) {
-        String sql = "UPDATE INVOICE SET api_status = ? WHERE invoice_id = ? AND is_deleted = 0";
+        String sql =
+                "UPDATE INVOICE " +
+                "SET api_status = ?, updated_at = SYSDATE " +
+                "WHERE invoice_id = ? AND is_deleted = 0";
 
         try (
                 Connection c = DBConnection.getConnection();
@@ -438,6 +435,111 @@ public class InvoiceRepository {
         }
     }
 
+    // =====================================================
+    // MODULE GỬI HÓA ĐƠN QUA GMAIL
+    // =====================================================
+
+    public InvoiceEmailDTO getInvoiceEmailData(int invoiceId) throws SQLException {
+        InvoiceEmailDTO invoice = null;
+
+        String invoiceSql =
+                "SELECT i.invoice_id, " +
+                "       s.full_name AS student_name, " +
+                "       s.parent_name, " +
+                "       s.parent_phone, " +
+                "       i.total_amount, " +
+                "       i.discount_amt, " +
+                "       i.final_amount, " +
+                "       i.amount_paid, " +
+                "       i.payment_method, " +
+                "       i.status, " +
+                "       i.api_status " +
+                "FROM INVOICE i " +
+                "JOIN STUDENT s ON i.student_id = s.student_id " +
+                "WHERE i.invoice_id = ? " +
+                "AND NVL(i.is_deleted, 0) = 0 " +
+                "AND NVL(s.is_deleted, 0) = 0";
+
+        String detailSql =
+                "SELECT sc.class_name, " +
+                "       sub.subject_name, " +
+                "       id.amount " +
+                "FROM INVOICE_DETAILS id " +
+                "JOIN STUDY_CLASS sc ON id.class_id = sc.class_id " +
+                "JOIN SUBJECT sub ON sc.subject_id = sub.subject_id " +
+                "WHERE id.invoice_id = ? " +
+                "AND NVL(id.is_deleted, 0) = 0 " +
+                "AND NVL(sc.is_deleted, 0) = 0 " +
+                "AND NVL(sub.is_deleted, 0) = 0 " +
+                "ORDER BY sc.class_name";
+
+        try (
+                Connection con = DBConnection.getConnection();
+                PreparedStatement ps = con.prepareStatement(invoiceSql)
+        ) {
+            ps.setInt(1, invoiceId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    invoice = new InvoiceEmailDTO();
+
+                    invoice.invoiceId = rs.getInt("invoice_id");
+                    invoice.studentName = rs.getNString("student_name");
+                    invoice.parentName = rs.getNString("parent_name");
+                    invoice.parentPhone = rs.getString("parent_phone");
+                    invoice.totalAmount = rs.getDouble("total_amount");
+                    invoice.discountAmount = rs.getDouble("discount_amt");
+                    invoice.finalAmount = rs.getDouble("final_amount");
+                    invoice.paymentMethod = rs.getString("payment_method");
+                    invoice.status = rs.getString("status");
+                    invoice.apiStatus = rs.getString("api_status");
+                }
+            }
+
+            if (invoice == null) {
+                throw new SQLException("Không tìm thấy hóa đơn có mã: " + invoiceId);
+            }
+
+            try (PreparedStatement psDetail = con.prepareStatement(detailSql)) {
+                psDetail.setInt(1, invoiceId);
+
+                try (ResultSet rsDetail = psDetail.executeQuery()) {
+                    while (rsDetail.next()) {
+                        invoice.items.add(new InvoiceEmailItemDTO(
+                                rsDetail.getNString("class_name"),
+                                rsDetail.getNString("subject_name"),
+                                rsDetail.getDouble("amount")
+                        ));
+                    }
+                }
+            }
+        }
+
+        return invoice;
+    }
+
+    public void updateInvoiceApiStatus(int invoiceId, String apiStatus) throws SQLException {
+        String sql =
+                "UPDATE INVOICE " +
+                "SET api_status = ?, " +
+                "    updated_at = SYSDATE " +
+                "WHERE invoice_id = ? " +
+                "AND NVL(is_deleted, 0) = 0";
+
+        try (
+                Connection con = DBConnection.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)
+        ) {
+            ps.setString(1, apiStatus);
+            ps.setInt(2, invoiceId);
+
+            int rows = ps.executeUpdate();
+
+            if (rows == 0) {
+                throw new SQLException("Không thể cập nhật trạng thái gửi hóa đơn.");
+            }
+        }
+    }
 
     private String formatMoneyForMessage(double amount) {
         return String.format("%,.0f", Math.max(0, amount));

@@ -130,7 +130,7 @@ public class AttendanceAnalyticsPanel extends JPanel {
 
         card.add(buildToolbar(), BorderLayout.NORTH);
 
-        String[] cols = {"Mã HV", "Họ và tên", "Tổng buổi", "Có mặt", "Vắng", "Tỷ lệ chuyên cần"};
+        String[] cols = {"Mã HV", "Họ và tên", "Lớp học", "Tổng buổi", "Có mặt", "Vắng", "Tỷ lệ chuyên cần"};
         model = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int row, int col) { return false; }
         };
@@ -139,7 +139,7 @@ public class AttendanceAnalyticsPanel extends JPanel {
         table.setModel(model);
         configureTable(table);
 
-        table.getColumnModel().getColumn(5).setCellRenderer(new AttendanceRateRenderer());
+        table.getColumnModel().getColumn(6).setCellRenderer(new AttendanceRateRenderer());
 
         ModernScrollPane scrollPane = new ModernScrollPane(table);
         scrollPane.setBorder(BorderFactory.createLineBorder(BORDER, 1, true));
@@ -299,11 +299,12 @@ public class AttendanceAnalyticsPanel extends JPanel {
         table.setDefaultRenderer(Object.class, new AnalyticsCellRenderer());
 
         table.getColumnModel().getColumn(0).setPreferredWidth(85);
-        table.getColumnModel().getColumn(1).setPreferredWidth(220);
-        table.getColumnModel().getColumn(2).setPreferredWidth(95);
-        table.getColumnModel().getColumn(3).setPreferredWidth(85);
+        table.getColumnModel().getColumn(1).setPreferredWidth(200);
+        table.getColumnModel().getColumn(2).setPreferredWidth(180);
+        table.getColumnModel().getColumn(3).setPreferredWidth(95);
         table.getColumnModel().getColumn(4).setPreferredWidth(85);
-        table.getColumnModel().getColumn(5).setPreferredWidth(170);
+        table.getColumnModel().getColumn(5).setPreferredWidth(85);
+        table.getColumnModel().getColumn(6).setPreferredWidth(170);
     }
 
     private void setLoadingState(boolean loading, String message) {
@@ -316,8 +317,9 @@ public class AttendanceAnalyticsPanel extends JPanel {
     private void loadClasses() {
         setLoadingState(true, "Đang tải lớp học...");
 
-        Result<List<Map<String, Object>>> res = service.getTeacherClasses();
+        Result<List<Map<String, Object>>> res = service.getAccessibleClasses();
         cbxClasses.removeAllItems();
+        cbxClasses.addItem(new ComboItem(0, "Tất cả lớp"));
 
         if (res.isSuccess() && !res.getData().isEmpty()) {
             List<Map<String, Object>> classes = res.getData();
@@ -329,7 +331,6 @@ public class AttendanceAnalyticsPanel extends JPanel {
 
             setLoadingState(false, "Sẵn sàng");
         } else {
-            cbxClasses.addItem(new ComboItem(-1, "Không có lớp"));
             lblClassCount.setText("0");
             setLoadingState(false, "Không có lớp");
         }
@@ -343,7 +344,7 @@ public class AttendanceAnalyticsPanel extends JPanel {
             return;
         }
 
-        lblSelectedClass.setText("Đang xem lớp: " + cls);
+        lblSelectedClass.setText(cls.getId() == 0 ? "Đang xem: Tất cả lớp" : "Đang xem lớp: " + cls);
         setLoadingState(true, "Đang tải thống kê...");
 
         SwingWorker<Result<List<AttendanceAnalyticsDTO>>, Void> worker = new SwingWorker<>() {
@@ -379,6 +380,7 @@ public class AttendanceAnalyticsPanel extends JPanel {
                             model.addRow(new Object[]{
                                     "HV" + String.format("%04d", dto.getStudentId()),
                                     dto.getFullName(),
+                                    dto.getClassName(),
                                     dto.getTotalSessions(),
                                     dto.getPresentCount(),
                                     dto.getAbsentCount(),
@@ -475,7 +477,7 @@ public class AttendanceAnalyticsPanel extends JPanel {
                 label.setForeground(column == 0 ? PRIMARY_DARK : TEXT_MAIN);
             }
 
-            if (column == 0 || column >= 2) {
+            if (column == 0 || column >= 3) {
                 label.setHorizontalAlignment(SwingConstants.CENTER);
                 label.setFont(new Font("Segoe UI", column == 0 ? Font.BOLD : Font.PLAIN, 13));
             } else {

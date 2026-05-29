@@ -4,9 +4,7 @@ import com.mycompany.myapp.model.TeacherScheduleDTO;
 import com.mycompany.myapp.service.TeacherScheduleService;
 import com.mycompany.myapp.utils.SessionStore;
 import com.mycompany.myapp.view.components.RoundedPanel;
-import com.mycompany.myapp.view.components.UIKit;
 import com.mycompany.myapp.view.components.UIKit.*;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -14,16 +12,23 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 public class SchedulePanel extends JPanel {
+
     private ModernTable table;
     private DefaultTableModel model;
     private TableRowSorter<DefaultTableModel> rowSorter;
     private TeacherScheduleService scheduleService;
+
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
 
     private JLabel lblStatus;
     private JLabel lblTotalSessions;
@@ -44,8 +49,6 @@ public class SchedulePanel extends JPanel {
     private static final Color BLUE_SOFT = new Color(219, 234, 254);
     private static final Color GREEN = new Color(22, 163, 74);
     private static final Color GREEN_SOFT = new Color(220, 252, 231);
-    private static final Color ORANGE = new Color(234, 88, 12);
-    private static final Color ORANGE_SOFT = new Color(255, 237, 213);
 
     public SchedulePanel() {
         scheduleService = new TeacherScheduleService();
@@ -78,7 +81,7 @@ public class SchedulePanel extends JPanel {
         title.setForeground(TEXT_MAIN);
         title.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel subtitle = new JLabel("Theo dõi ca dạy, lớp học, môn học và phòng học trong tuần");
+        JLabel subtitle = new JLabel("Theo dõi ca dạy, lớp học, môn học, phòng học và thời gian khóa học");
         subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         subtitle.setForeground(TEXT_MUTED);
         subtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -131,9 +134,23 @@ public class SchedulePanel extends JPanel {
 
         card.add(buildToolbar(), BorderLayout.NORTH);
 
-        String[] cols = {"Thứ", "Giờ bắt đầu", "Giờ kết thúc", "Môn học", "Lớp học", "Phòng học", "dayKey"};
+        String[] cols = {
+                "Thứ",
+                "Giờ bắt đầu",
+                "Giờ kết thúc",
+                "Thời gian khóa học",
+                "Trạng thái",
+                "Môn học",
+                "Lớp học",
+                "Phòng học",
+                "dayKey"
+        };
+
         model = new DefaultTableModel(cols, 0) {
-            @Override public boolean isCellEditable(int row, int col) { return false; }
+            @Override
+            public boolean isCellEditable(int row, int col) {
+                return false;
+            }
         };
 
         table = new ModernTable();
@@ -143,12 +160,12 @@ public class SchedulePanel extends JPanel {
         rowSorter = new TableRowSorter<>(model);
         table.setRowSorter(rowSorter);
 
-        // Ẩn cột kỹ thuật dayKey nhưng vẫn dùng để lọc theo thứ.
-        table.getColumnModel().removeColumn(table.getColumnModel().getColumn(6));
+        table.getColumnModel().removeColumn(table.getColumnModel().getColumn(8));
 
         ModernScrollPane scrollPane = new ModernScrollPane(table);
         scrollPane.setBorder(BorderFactory.createLineBorder(BORDER, 1, true));
         scrollPane.getViewport().setBackground(Color.WHITE);
+
         card.add(scrollPane, BorderLayout.CENTER);
 
         return card;
@@ -179,9 +196,17 @@ public class SchedulePanel extends JPanel {
         ));
         txtSearch.setToolTipText("Tìm theo môn học, lớp học hoặc phòng học");
         txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { applyFilter(); }
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                applyFilter();
+            }
+
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                applyFilter();
+            }
+
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                applyFilter();
+            }
         });
 
         JLabel lblDay = new JLabel("Thứ");
@@ -304,16 +329,20 @@ public class SchedulePanel extends JPanel {
         ScheduleCellRenderer renderer = new ScheduleCellRenderer();
         table.setDefaultRenderer(Object.class, renderer);
 
-        table.getColumnModel().getColumn(0).setPreferredWidth(95);
-        table.getColumnModel().getColumn(1).setPreferredWidth(115);
-        table.getColumnModel().getColumn(2).setPreferredWidth(115);
-        table.getColumnModel().getColumn(3).setPreferredWidth(210);
-        table.getColumnModel().getColumn(4).setPreferredWidth(170);
-        table.getColumnModel().getColumn(5).setPreferredWidth(120);
+        table.getColumnModel().getColumn(0).setPreferredWidth(85);
+        table.getColumnModel().getColumn(1).setPreferredWidth(105);
+        table.getColumnModel().getColumn(2).setPreferredWidth(105);
+        table.getColumnModel().getColumn(3).setPreferredWidth(175);
+        table.getColumnModel().getColumn(4).setPreferredWidth(115);
+        table.getColumnModel().getColumn(5).setPreferredWidth(190);
+        table.getColumnModel().getColumn(6).setPreferredWidth(160);
+        table.getColumnModel().getColumn(7).setPreferredWidth(110);
     }
 
     private void applyFilter() {
-        if (rowSorter == null) return;
+        if (rowSorter == null) {
+            return;
+        }
 
         String keyword = txtSearch == null ? "" : txtSearch.getText().trim();
         String day = cmbDayFilter == null || cmbDayFilter.getSelectedItem() == null
@@ -323,11 +352,11 @@ public class SchedulePanel extends JPanel {
         List<RowFilter<DefaultTableModel, Object>> filters = new ArrayList<>();
 
         if (!keyword.isEmpty()) {
-            filters.add(RowFilter.regexFilter("(?i)" + Pattern.quote(keyword), 3, 4, 5));
+            filters.add(RowFilter.regexFilter("(?i)" + Pattern.quote(keyword), 5, 6, 7));
         }
 
         if (!"Tất cả".equals(day)) {
-            filters.add(RowFilter.regexFilter("^" + Pattern.quote(day) + "$", 6));
+            filters.add(RowFilter.regexFilter("^" + Pattern.quote(day) + "$", 8));
         }
 
         if (filters.isEmpty()) {
@@ -339,16 +368,22 @@ public class SchedulePanel extends JPanel {
 
     private void setLoadingState(boolean loading) {
         setCursor(loading ? Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR) : Cursor.getDefaultCursor());
+
         if (lblStatus != null) {
             lblStatus.setText(loading ? "Đang tải dữ liệu..." : "Dữ liệu đã cập nhật");
         }
     }
 
     private void loadDataFromDatabase() {
-        Integer teacherId = SessionStore.getUserId();
+        int teacherId = SessionStore.getUserId();
 
-        if (teacherId == null || teacherId == -1) {
-            JOptionPane.showMessageDialog(this, "Không tìm thấy thông tin phiên đăng nhập!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        if (teacherId <= 0) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Không tìm thấy thông tin phiên đăng nhập!",
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE
+            );
             return;
         }
 
@@ -357,7 +392,7 @@ public class SchedulePanel extends JPanel {
         SwingWorker<Map<Integer, List<TeacherScheduleDTO>>, Void> worker = new SwingWorker<>() {
             @Override
             protected Map<Integer, List<TeacherScheduleDTO>> doInBackground() {
-                return scheduleService.getGroupedSchedule(teacherId.longValue());
+                return scheduleService.getGroupedSchedule((long) teacherId);
             }
 
             @Override
@@ -372,6 +407,10 @@ public class SchedulePanel extends JPanel {
                             "Lỗi",
                             JOptionPane.ERROR_MESSAGE
                     );
+                    model.setRowCount(0);
+                    lblTotalSessions.setText("0");
+                    lblTeachingDays.setText("0");
+                    lblFreeDays.setText("0");
                 } finally {
                     setLoadingState(false);
                 }
@@ -394,15 +433,19 @@ public class SchedulePanel extends JPanel {
 
             if (daySchedules == null || daySchedules.isEmpty()) {
                 freeDays++;
+
                 model.addRow(new Object[]{
                         dayText,
                         "-",
                         "-",
+                        "-",
+                        "Không có lịch",
                         "Nghỉ / Không có lịch dạy",
                         "-",
                         "-",
                         dayText
                 });
+
             } else {
                 teachingDays++;
                 totalSessions += daySchedules.size();
@@ -413,11 +456,13 @@ public class SchedulePanel extends JPanel {
 
                     model.addRow(new Object[]{
                             displayDayText,
-                            dto.getStartTime(),
-                            dto.getEndTime(),
-                            dto.getSubjectName(),
-                            dto.getClassName(),
-                            dto.getRoomName(),
+                            safeText(dto.getStartTime()),
+                            safeText(dto.getEndTime()),
+                            formatDateRange(dto.getStartDate(), dto.getEndDate()),
+                            getCourseStatus(dto.getStartDate(), dto.getEndDate()),
+                            safeText(dto.getSubjectName()),
+                            safeText(dto.getClassName()),
+                            safeText(dto.getRoomName()),
                             dayText
                     });
                 }
@@ -431,7 +476,67 @@ public class SchedulePanel extends JPanel {
         applyFilter();
     }
 
+    private String safeText(Object value) {
+        if (value == null) {
+            return "-";
+        }
+
+        String text = value.toString().trim();
+        return text.isEmpty() ? "-" : text;
+    }
+
+    private String formatDateRange(Date startDate, Date endDate) {
+        if (startDate == null && endDate == null) {
+            return "-";
+        }
+
+        if (startDate == null) {
+            return "- → " + dateFormat.format(endDate);
+        }
+
+        if (endDate == null) {
+            return dateFormat.format(startDate) + " → -";
+        }
+
+        return dateFormat.format(startDate) + " → " + dateFormat.format(endDate);
+    }
+
+    private String getCourseStatus(Date startDate, Date endDate) {
+        if (startDate == null && endDate == null) {
+            return "Chưa rõ";
+        }
+
+        LocalDate today = LocalDate.now();
+        LocalDate start = toLocalDateSafe(startDate);
+        LocalDate end = toLocalDateSafe(endDate);
+
+        if (start != null && today.isBefore(start)) {
+            return "Sắp mở";
+        }
+
+        if (end != null && today.isAfter(end)) {
+            return "Đã kết thúc";
+        }
+
+        return "Đang diễn ra";
+    }
+
+    private LocalDate toLocalDateSafe(Date date) {
+        if (date == null) {
+            return null;
+        }
+
+        if (date instanceof java.sql.Date) {
+            return ((java.sql.Date) date).toLocalDate();
+        }
+
+        return date.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate();
+    }
+
     private static class ScheduleCellRenderer extends DefaultTableCellRenderer {
+
         @Override
         public Component getTableCellRendererComponent(
                 JTable table,
@@ -447,9 +552,12 @@ public class SchedulePanel extends JPanel {
             setBorder(new EmptyBorder(0, 10, 0, 10));
 
             String subject = "";
+            String status = "";
+
             try {
                 int modelRow = table.convertRowIndexToModel(row);
-                subject = table.getModel().getValueAt(modelRow, 3).toString();
+                subject = table.getModel().getValueAt(modelRow, 5).toString();
+                status = table.getModel().getValueAt(modelRow, 4).toString();
             } catch (Exception ignored) {
             }
 
@@ -458,6 +566,7 @@ public class SchedulePanel extends JPanel {
             if (isSelected) {
                 setBackground(new Color(108, 92, 231));
                 setForeground(Color.WHITE);
+                setToolTipText(buildTooltip(table, row));
                 return comp;
             }
 
@@ -468,19 +577,64 @@ public class SchedulePanel extends JPanel {
             } else {
                 setBackground(row % 2 == 0 ? Color.WHITE : new Color(252, 253, 255));
                 setForeground(new Color(15, 23, 42));
+                setFont(new Font("Segoe UI", Font.PLAIN, 13));
+
                 if (column == 0) {
                     setFont(new Font("Segoe UI", Font.BOLD, 13));
                     setForeground(new Color(108, 92, 231));
                 }
+
+                if (column == 3) {
+                    setForeground(new Color(71, 85, 105));
+                }
+
+                if (column == 4) {
+                    setFont(new Font("Segoe UI", Font.BOLD, 12));
+
+                    if ("Đang diễn ra".equals(status)) {
+                        setForeground(new Color(22, 163, 74));
+                        setBackground(new Color(240, 253, 244));
+                    } else if ("Sắp mở".equals(status)) {
+                        setForeground(new Color(37, 99, 235));
+                        setBackground(new Color(239, 246, 255));
+                    } else if ("Đã kết thúc".equals(status)) {
+                        setForeground(new Color(100, 116, 139));
+                        setBackground(new Color(241, 245, 249));
+                    } else {
+                        setForeground(new Color(148, 163, 184));
+                    }
+                }
             }
 
-            if (value != null) {
-                setToolTipText(value.toString());
-            } else {
-                setToolTipText("");
-            }
-
+            setToolTipText(buildTooltip(table, row));
             return comp;
+        }
+
+        private String buildTooltip(JTable table, int row) {
+            try {
+                int modelRow = table.convertRowIndexToModel(row);
+
+                String day = table.getModel().getValueAt(modelRow, 8).toString();
+                String start = table.getModel().getValueAt(modelRow, 1).toString();
+                String end = table.getModel().getValueAt(modelRow, 2).toString();
+                String range = table.getModel().getValueAt(modelRow, 3).toString();
+                String status = table.getModel().getValueAt(modelRow, 4).toString();
+                String subject = table.getModel().getValueAt(modelRow, 5).toString();
+                String className = table.getModel().getValueAt(modelRow, 6).toString();
+                String room = table.getModel().getValueAt(modelRow, 7).toString();
+
+                return "<html>"
+                        + "<b>" + subject + "</b><br>"
+                        + "Lớp: " + className + "<br>"
+                        + "Phòng: " + room + "<br>"
+                        + "Thứ: " + day + "<br>"
+                        + "Ca học: " + start + " - " + end + "<br>"
+                        + "Thời gian khóa học: " + range + "<br>"
+                        + "Trạng thái: " + status
+                        + "</html>";
+            } catch (Exception e) {
+                return "";
+            }
         }
     }
 

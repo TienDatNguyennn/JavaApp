@@ -337,7 +337,31 @@ public class LoginUI extends JFrame {
     // =========================================================
 
     private boolean hasRole(List<String> roles, String roleName) {
-        return roles != null && roles.contains(roleName);
+        if (roles == null || roleName == null) {
+            return false;
+        }
+
+        for (String role : roles) {
+            if (role != null && role.trim().equalsIgnoreCase(roleName.trim())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean hasAnyRole(List<String> roles, String... roleNames) {
+        if (roleNames == null) {
+            return false;
+        }
+
+        for (String roleName : roleNames) {
+            if (hasRole(roles, roleName)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private boolean canOpen(String moduleCode) {
@@ -442,10 +466,42 @@ public class LoginUI extends JFrame {
 
             List<JButton> navButtons = new ArrayList<>();
 
-            boolean isAdmin = hasRole(roles, "Nhan_Vien_Quan_Ly_He_Thong");
-            boolean isGiaoVien = hasRole(roles, "Giao_Vien");
-            boolean isGiaoVu = hasRole(roles, "Nhan_Vien_Quan_Ly_Nghiep_Vu");
-            boolean isKeToan = hasRole(roles, "Nhan_Vien_Ke_Toan");
+            boolean isAdmin = hasAnyRole(
+                    roles,
+                    "ADMIN",
+                    "QUAN_TRI_HE_THONG",
+                    "Nhan_Vien_Quan_Ly_He_Thong",
+                    "Quản trị hệ thống",
+                    "Quan tri he thong"
+            );
+
+            boolean isGiaoVien = hasAnyRole(
+                    roles,
+                    "TEACHER",
+                    "GIAO_VIEN",
+                    "Giao_Vien",
+                    "Giáo viên",
+                    "Giao vien"
+            );
+
+            boolean isGiaoVu = hasAnyRole(
+                    roles,
+                    "ACADEMIC_STAFF",
+                    "GIAO_VU",
+                    "NHAN_VIEN_GIAO_VU",
+                    "Nhan_Vien_Quan_Ly_Nghiep_Vu",
+                    "Nhân viên giáo vụ",
+                    "Nhan vien giao vu"
+            );
+
+            boolean isKeToan = hasAnyRole(
+                    roles,
+                    "ACCOUNTANT",
+                    "KE_TOAN",
+                    "Nhan_Vien_Ke_Toan",
+                    "Nhân viên kế toán",
+                    "Nhan vien ke toan"
+            );
 
             // =====================================================
             // 1. QUẢN TRỊ HỆ THỐNG
@@ -1036,19 +1092,19 @@ public class LoginUI extends JFrame {
             return "Người dùng hệ thống";
         }
 
-        if (roles.contains("Nhan_Vien_Quan_Ly_He_Thong")) {
+        if (hasAnyRole(roles, "ADMIN", "QUAN_TRI_HE_THONG", "Nhan_Vien_Quan_Ly_He_Thong", "Quản trị hệ thống", "Quan tri he thong")) {
             return "Quản trị hệ thống";
         }
 
-        if (roles.contains("Nhan_Vien_Quan_Ly_Nghiep_Vu")) {
+        if (hasAnyRole(roles, "ACADEMIC_STAFF", "GIAO_VU", "NHAN_VIEN_GIAO_VU", "Nhan_Vien_Quan_Ly_Nghiep_Vu", "Nhân viên giáo vụ", "Nhan vien giao vu")) {
             return "Nhân viên giáo vụ";
         }
 
-        if (roles.contains("Nhan_Vien_Ke_Toan")) {
+        if (hasAnyRole(roles, "ACCOUNTANT", "KE_TOAN", "Nhan_Vien_Ke_Toan", "Nhân viên kế toán", "Nhan vien ke toan")) {
             return "Nhân viên kế toán";
         }
 
-        if (roles.contains("Giao_Vien")) {
+        if (hasAnyRole(roles, "TEACHER", "GIAO_VIEN", "Giao_Vien", "Giáo viên", "Giao vien")) {
             return "Giáo viên";
         }
 
